@@ -7,6 +7,7 @@ import java.sql.*;
 
 public class UserDAO {
 
+    // 로그인 처리 시 loginId로 사용자 정보 조회
     public UserDTO findByLoginId(String loginId) {
         String sql = """
                 SELECT u.user_id,
@@ -55,6 +56,7 @@ public class UserDAO {
     }
 
 
+    // loginId로 아이디 중복 여부 확인
     public boolean existsByLoginId(String loginId) {
         String sql = "SELECT COUNT(*) FROM users WHERE login_id = ?";
 

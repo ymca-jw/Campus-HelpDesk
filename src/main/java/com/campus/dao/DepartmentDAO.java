@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DepartmentDAO {
+
+    // 전체 부서 목록 조회
     public List<DepartmentDTO> findAll() {
         List<DepartmentDTO> departments = new ArrayList<>();
 
