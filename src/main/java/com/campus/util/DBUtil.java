@@ -16,6 +16,11 @@ public class DBUtil {
     private static String password;
 
     static {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         loadProperties();
     }
 
