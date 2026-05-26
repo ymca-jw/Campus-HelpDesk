@@ -131,7 +131,6 @@ Campus-HelpDesk
 ---
 
 ## 5. URL 구조
----
 ### User (사용자)
 ```text
 GET  /user/login       로그인 화면
@@ -195,7 +194,6 @@ git clone https://github.com/조직명/Campus-HelpDesk.git
 cd Campus-HelpDesk
 ```
 
----
 
 ### 2. MySQL DB 생성
 MySQL에서 데이터베이스를 생성합니다.
@@ -210,7 +208,6 @@ COLLATE utf8mb4_unicode_ci;
 2. sql/data.sql      // 테스트 용 데이터셋
 ```
 
----
 
 ### 3. DB 설정 파일 생성
 DB 접속 정보는 **db.properties** 파일에서 관리합니다. src/main/resources/db.properties.example 파일을 복사하여 **db.properties**를 생성합니다.
@@ -224,7 +221,6 @@ db.username=root
 db.password=본인 MySQL 비밀번호
 ```
 
----
 
 ### 4. Tomcat 설정
 Tomcat 10.1.x를 설치한 뒤 IDE에 서버를 등록합니다.
