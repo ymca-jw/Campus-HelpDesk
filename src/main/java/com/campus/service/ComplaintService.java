@@ -2,6 +2,7 @@ package com.campus.service;
 
 import com.campus.dao.ComplaintDAO;
 import com.campus.dto.ComplaintDTO;
+import com.campus.dto.FaqDTO;
 
 import java.util.ArrayList;
 import java.util.List;
