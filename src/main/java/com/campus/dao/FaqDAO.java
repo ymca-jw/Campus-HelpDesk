@@ -24,21 +24,19 @@ public class FaqDAO {
                     f.question,
                     f.answer,
                     f.created_at,
-                    -- (?)와 FAQ의 question, answer에서 관련도 점수 계산 후 text_score에 저장
+            
                     MATCH(f.question, f.answer) AGAINST (?) AS text_score,
                 
                     (
                         MATCH(f.question, f.answer) AGAINST (?)
-                        + CASE WHEN f.department_id = ? THEN 2 ELSE 0 END   -- 같은 부서면 +2점
-                        + CASE WHEN f.category = ? THEN 2 ELSE 0 END        -- 같은 카테고리면 +2점
+                        + CASE WHEN f.department_id = ? THEN 2 ELSE 0 END   
+                        + CASE WHEN f.category = ? THEN 2 ELSE 0 END        
                     ) AS final_score
                 FROM faq f
-                -- department와 join (이름 뽑아내기 위해서)
                 LEFT JOIN departments d ON f.department_id = d.department_id
-                -- FAQ 중에서 검색어와 관련 있는 것만 가져오기
                 WHERE MATCH(f.question, f.answer) AGAINST (?)
-                ORDER BY final_score DESC   -- 최종 점수 내림차순
-                LIMIT 3;    -- 3개만
+                ORDER BY final_score DESC   
+                LIMIT 3;    
                 """;
         try (
                 Connection conn = DBUtil.getConnection();
