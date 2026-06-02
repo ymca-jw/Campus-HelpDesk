@@ -425,7 +425,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     'Adobe 실습실 이용 매뉴얼',
     'Adobe 실습실 이용 매뉴얼 (클릭 ! 새 창에서 열림)
 에는 Adobe 계정 생성부터 Adobe Creative Cloud 로그인 내용이 포함되어 있습니다.
@@ -484,7 +484,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     'Microsoft Teams 매뉴얼',
     'Microsoft Teams 매뉴얼 (클릭 ! 새 창에서 열림)
 에는 Microsoft Education 계정 생성부터 교수자 기준 Teams 사용방법이 포함되어 있습니다.
@@ -554,7 +554,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '한글(hwp) 실행 시 오류 해결 방법 안내 (한컴오피스 2007 이상)',
     '크롬 브라우저 프로세스와의 충돌 오류 메시지 출력 및 한글 실행이 안되는 경우, 아래의 방법을 시도해보시기 바랍니다.
 1.
@@ -621,7 +621,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '윤디자인(YOONDESIGN) 폰트 사용 안내',
     '윤디자인
 (YOONDESIGN)
@@ -652,7 +652,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '직원용 PMS(Patch Management System) 설치 안내',
     'PMS(Patch Management System)
 : 사용자 PC의 취약점(바이러스 감염, 운영체제 보안취약점 등)에 대한 보안 패치를 적용하기 위한 시스템입니다.
@@ -685,7 +685,7 @@ Policy Agent 설치 진행 화면',
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '정품 소프트웨어 사용 안내',
     '불법복제 소프트웨어 근절을 위해 우리대학에서는 정품소프트웨어 사용을 의무화하고 있습니다.
 교내에서 사용하는 모든 소프트웨어는 저작권을 소유한 회사와 소프트웨어 사용권 계약이 체결되어 있으니 그 범주 안에서 사용하여야 하며 그 범위를 벗어나면 불법 복제 소프트웨어로 간주되오니 이점 유념하여 사용하여야 합니다.
@@ -703,7 +703,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     'Windows 10 이상에서 포탈 접속 방법 안내',
     '포탈 접속을 위한 Internet Explorer 사용 안내
 Windows 10 이상에서는 Microsoft Edge가 기본 브라우저이지만, 서경포탈은 Edge에서 정상 동작하지 않으므로 Internet Explorer로 접속해야 합니다.
@@ -744,7 +744,7 @@ iexplore.exe
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '인터넷에서 파일을 다운받았으나 차단되어 실행할 수 없을 때',
     '인터넷에서 다운로드한 파일의 속성을 확인했을 때, 보안 항목에 다음과 같은 메시지가 표시되면 보안 속성을 해제해야 파일을 열 수 있습니다.
 이 파일은 다른 컴퓨터로부터 왔으며 사용자의 컴퓨터를 보호하기 위해 차단되었을 수도 있습니다.
@@ -808,7 +808,7 @@ unblock.reg
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     'Windows 10 자동 업데이트 예외처리 방법 안내',
     '7월 29일 윈도우 10 출시에 따라 windows7/8/8.1에서 자동으로 업데이트를 진행하여 활성화 버튼이 생성 되며
 이를 잘못 누를경우 Windows 10으로 업그레이드를 하게 됩니다.
@@ -819,7 +819,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '포탈 파일 다운로드 시 보안컨텐츠 표시 창 제거 방법',
     '포탈에서 파일 다운로드를 하는 경우 보안 컨텐츠만 표시됩니다 창이 뜰 경우 모든 컨텐츠 사용으로 체크를 해주셔야 파일을 받을 수 있습니다.
 이 컨텐츠 창이 뜨지 않도록 하기 위해서 설정을 안내해 드립니다.
@@ -836,7 +836,7 @@ Microsoft 고객지원(KB2625928)
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '웹메일 사용 안내',
     '본교 웹메일 시스템이 Google Workspace(Gmail)로 업그레이드되었습니다.
 웹메일 바로가기
@@ -859,7 +859,7 @@ Gmail 자주 묻는 질문
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     'e-Book (EPUB, PDF 등)을 위한 무료 글꼴 사용 안내.',
     'PDF, EPUB와 같은 e-Book 형태로 기존 문서(한컴오피스, MS오피스,기타문서) 의 변환 작업 시 문서 기본 폰트를 2차 제작물로 변환 시 저작권 침해행위에 해당 될 수 있습 니다.
 온라인상에 배포 및 게시를 위한 기존 문서의 PDF, EPUB와 같은 e-Book 형태로 변환 시 반드시 무료 글꼴을 사용해 주시기 바랍니다.',
@@ -869,7 +869,7 @@ VALUES (
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '홈페이지 및 포탈 접속 에러시 조치안내',
     '홈페이지 및 포탈 접속 시 에러가 발생하는 경우 아래와 같이 조치하시기 바랍니다.
 1. 쿠키 및 임시파일 삭제
@@ -904,7 +904,7 @@ XP : 제어판 – 프로그램 추가 및 삭제 – IE 삭제
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     'PMS(Patch Management System) 설치 안내',
     'PMS
 설치 안내
@@ -945,7 +945,7 @@ APCAgentSetup.exe
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '아웃룩으로 메일 보낼때 주의사항',
     '아웃룩 메일 형식 문제(Winmail.dat) 원인과 해결 방법
 아웃룩 사용자가 자주 제기하는 문제 중 하나인
@@ -1063,7 +1063,7 @@ Microsoft 고객지원(KB138053)
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '교내 무선 인터넷 사용방법(無인증)',
     '교내 무선 인터넷 사용방법(無인증)
 개방형 WIFI 설치에 따른 사용방법에 대하여 다음과 같이 안내하오니 참조하여 사용하시기 바랍니다.
@@ -1082,7 +1082,7 @@ SKUDNA / SKUDNA2
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     'Windows 2003 서버,FireFox 인증서 해결 안내',
     'SSL
 인증서 교체에 따른 조치 안내
@@ -1148,7 +1148,7 @@ Chain 구성 화면이 정상적으로 표시되는지 확인합니다.
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '신 인증서 교체에 따른 Login 조치 안내',
     '우리 대학교는 Login(SSL)인증서 자체에 대한 해킹(불법복제, 위변조 등)방지및 전자서명인증체계의 신뢰성 보장과 안정성 강화를 위해 인증서 키 길이 증대 및 알고리즘이 구인증서 (1024비트)에서 신인증서(2048비트)로 교체되었습니다. 이에 신SSL인증서 호환성 문제(Windows XP 서비스팩2 이하 미지원)가 발생한 사용자는 아래의 사항을 참조하시기 바랍니다.
 —- 아 래 —-
@@ -1182,7 +1182,7 @@ https://mail.skuniv.ac.kr
 INSERT INTO faq (department_id, category, question, answer, created_at)
 VALUES (
     (SELECT department_id FROM departments WHERE name = '전산지원팀' LIMIT 1),
-    'IT',
+    '전산',
     '강의참고자료 업로드/다운로드 안내',
     '강의참고자료업로드(교수) 프로그램 기능개선 작업과정에서 업로드 오류가 발생하여 2011학년도 1학기 강의자료 다운로드가 일주일정도 지연 되었습니다.
 2011년 3월 9일 현재 대부분의 기능을 정상화하였으나 일부 강의자료가 아직 정상적으로 다운로드 되고 있지 않은 관계로 2011년 3월 11일(금)까지 아래와 같이 확인 및 처리하여 주시기 바랍니다.
