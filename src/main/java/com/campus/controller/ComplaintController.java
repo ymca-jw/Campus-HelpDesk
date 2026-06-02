@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.List;
 
 @WebServlet({"/complaints", "/complaints/detail", "/complaints/new", "/complaints/check", "/complaints/update",
-"/complaints/create", "/complaints/edit", "/complaints/delete", "/complaints/like"})
+"/complaints/create", "/complaints/edit", "/complaints/delete", "/complaints/like", "/complaints/faq-test"})
 public class ComplaintController extends HttpServlet {
     private final ComplaintService complaintService = new ComplaintService();
     private final ComplaintCheckService complaintCheckService = new ComplaintCheckService();
@@ -28,12 +28,16 @@ public class ComplaintController extends HttpServlet {
 
         // 1. 민원 목록
         if ("/complaints".equals(path)) {
-            ComplaintList(req, res);
+            complaintList(req, res);
             return;
         }
         // 2. 민원 상세
         else if ("/complaints/detail".equals(path)) {
-            ComplaintDetail(req, res);
+            complaintDetail(req, res);
+            return;
+        }
+        else if ("/complaints/faq-test".equals(path)) {
+            faqTest(req, res);
             return;
         }
 
@@ -49,13 +53,14 @@ public class ComplaintController extends HttpServlet {
 
         //
         if ("/complaints/check".equals(path)) {
-            ComplaintFAQ(req, res);
+            complaintSimilarFAQ(req, res);
             return;
         }
     }
 
+
     // 민원 목록
-    private void ComplaintList(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    private void complaintList(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         List<ComplaintDTO> complaints = complaintService.findComplaintList();
         req.setAttribute("complaints", complaints);
         req.getRequestDispatcher("/WEB-INF/views/test/list.jsp").forward(req, res);
@@ -63,7 +68,7 @@ public class ComplaintController extends HttpServlet {
     }
 
     // 민원 상세
-    private void ComplaintDetail(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    private void complaintDetail(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         String _id = req.getParameter("id");
         if (_id == null || _id.equals("")) {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST);  // 400 error (추후 에러페이지 구현 지금은 sendError로 대체)
@@ -100,7 +105,7 @@ public class ComplaintController extends HttpServlet {
 
 
     // 유사민원 / FAQ
-    private void ComplaintFAQ(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    private void complaintSimilarFAQ(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         // 제목
         String title = req.getParameter("title");
         if (title == null || title.isBlank()) {
@@ -142,17 +147,20 @@ public class ComplaintController extends HttpServlet {
 
         // 작성 중인 민원 DTO 저장
         ComplaintDTO pendingComplaint = new ComplaintDTO();
+        pendingComplaint.setTitle(title);
+        pendingComplaint.setContent(content);
         pendingComplaint.setCategory(category);
         pendingComplaint.setDepartmentId(departmentId);
-        pendingComplaint.setContent(content);
-        pendingComplaint.setTitle(title);
         pendingComplaint.setPrivateFlag(isPrivate);
 
         req.setAttribute("pendingComplaint", pendingComplaint);
         req.getSession().setAttribute("pendingComplaint", pendingComplaint);
+        // 등록 성공 후 session.removeAttribute("pendingComplaint") 해야함
 
         // 유사 민원
         List<ComplaintDTO> similarComplaints = complaintCheckService.findSimilarComplaints(pendingComplaint);
+
+        // FAQ
         List<FaqDTO> similarFaqs = complaintCheckService.findSimilarFaqs(pendingComplaint);
 
         req.setAttribute("similarComplaints", similarComplaints);
@@ -167,6 +175,24 @@ public class ComplaintController extends HttpServlet {
         // req.setAttribute("categories", categories);
 
 
-        req.getRequestDispatcher("/WEB-INF/views/complaint/form.jsp").forward(req, res);
+        req.getRequestDispatcher("/WEB-INF/views/test/faq-test.jsp").forward(req, res);
     }
+
+
+
+
+
+
+
+
+
+
+
+    // faq 테스트용
+    private void faqTest(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
+
+        req.getRequestDispatcher("/WEB-INF/views/test/faq-test.jsp").forward(req, res);
+    }
+
 }
