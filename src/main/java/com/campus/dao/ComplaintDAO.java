@@ -98,6 +98,18 @@ public class ComplaintDAO {
     }
 
 
+    public List<ComplaintDTO> findSimilarCandidate() {
+
+        return List.of();
+    }
+
+
+
+
+
+
+
+
     // rs 한 줄을 ComplaintDTO 하나로 변환
     private ComplaintDTO mapRow(ResultSet rs) throws SQLException {
         ComplaintDTO complaint = new ComplaintDTO();
