@@ -1,10 +1,13 @@
 package com.campus.controller;
 
+import com.campus.dao.DepartmentDAO;
 import com.campus.dto.ComplaintDTO;
 import com.campus.dto.DepartmentDTO;
 import com.campus.dto.FaqDTO;
 import com.campus.service.ComplaintCheckService;
 import com.campus.service.ComplaintService;
+import com.campus.service.DepartmentService;
+import com.campus.util.CategoryConstants;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -18,6 +21,7 @@ import java.util.List;
 public class ComplaintController extends HttpServlet {
     private final ComplaintService complaintService = new ComplaintService();
     private final ComplaintCheckService complaintCheckService = new ComplaintCheckService();
+    private final DepartmentService departmentService = new DepartmentService();
 
     // GET 요청은 여기서 처리
     @Override
@@ -168,13 +172,12 @@ public class ComplaintController extends HttpServlet {
         req.setAttribute("showSimilarBox", true);
 
 
-        // form.jsp 다시 그리기 위해서 부서 목록이랑 카테고리 목록 다시 담기
-        // TODO: form.jsp select box 출력을 위해 departments, categories를 다시 request에 담아야 함
-        // 민원 작성 GET /complaints/new에서 쓰는 방식과 동일하게 맞출 예정
-        // req.setAttribute("departments", departments);
-        // req.setAttribute("categories", categories);
+        List<DepartmentDTO> departments = departmentService.findAllDepartments();
 
+        req.setAttribute("departments", departments);
+        req.setAttribute("categories", CategoryConstants.CATEGORIES);
 
+        // req.getRequestDispatcher("/WEB-INF/views/complaint/form.jsp").forward(req, res);
         req.getRequestDispatcher("/WEB-INF/views/test/faq-test.jsp").forward(req, res);
     }
 

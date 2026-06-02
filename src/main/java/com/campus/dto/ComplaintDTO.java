@@ -19,6 +19,7 @@ public class ComplaintDTO {
     // JOIN 결과 표시용
     private String writerName;
     private String departmentName;
+    private double finalScore;
 
     public Long getComplaintId() {
         return complaintId;
@@ -104,4 +105,6 @@ public class ComplaintDTO {
     public void setDepartmentName(String departmentName) {
         this.departmentName = departmentName;
     }
+    public double getFinalScore() { return finalScore; }
+    public void setFinalScore(double finalScore) { this.finalScore = finalScore; }
 }
