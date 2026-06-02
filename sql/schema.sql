@@ -122,7 +122,9 @@ CREATE TABLE faq (
                          FOREIGN KEY (department_id)
                              REFERENCES departments(department_id)
                              ON DELETE SET NULL
-                             ON UPDATE CASCADE
+                             ON UPDATE CASCADE,
+
+                    FULLTEXT KEY ft_faq_question_answer(question, answer)
 );
 
 CREATE TABLE status_history (

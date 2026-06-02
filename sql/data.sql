@@ -1,12 +1,19 @@
 USE campus_helpdesk;
 
-INSERT INTO departments (name, type) VALUES
-                                         ('컴퓨터공학과', 'MAJOR'),
-                                         ('경영학과', 'MAJOR'),
-                                         ('학사행정팀', 'ADMIN'),
-                                         ('전산지원팀', 'ADMIN'),
-                                         ('시설관리팀', 'ADMIN'),
-                                         ('학생지원팀', 'ADMIN');
+INSERT INTO departments (department_id, name, type, created_at) VALUES
+                                                                    (1, '교무과', 'ADMIN', NOW()),
+                                                                    (2, '학생과', 'ADMIN', NOW()),
+                                                                    (3, '장학과', 'ADMIN', NOW()),
+                                                                    (4, '입학관리과', 'ADMIN', NOW()),
+                                                                    (5, '전산지원팀', 'ADMIN', NOW()),
+                                                                    (6, '시설관리팀', 'ADMIN', NOW()),
+                                                                    (7, '학술정보관', 'ADMIN', NOW()),
+                                                                    (8, '학생상담센터', 'ADMIN', NOW()),
+                                                                    (9, '대학일자리플러스본부', 'ADMIN', NOW()),
+                                                                    (10, '인권센터', 'ADMIN', NOW()),
+                                                                    (11, '소프트웨어학과', 'MAJOR', NOW()),
+                                                                    (12, '경영학부', 'MAJOR', NOW()),
+                                                                    (13, '공연예술학부', 'MAJOR', NOW());
 
 INSERT INTO users (login_id, password, name, role, department_id) VALUES
                                                                       ('student1', '1234', '학생1', 'STUDENT', NULL),
@@ -36,14 +43,6 @@ INSERT INTO answers (complaint_id, staff_id, content) VALUES
                                                           (3, 5, '수강신청 정정 기간은 학사 공지사항에서 확인할 수 있습니다.'),
                                                           (2, 4, '시설관리팀에서 해당 강의실 에어컨 상태를 확인 중입니다.');
 
-INSERT INTO faq (department_id, category, question, answer) VALUES
-                                                                (4, '전산', '학교 와이파이 연결 방법이 궁금합니다.', '학교 포털 계정으로 Wi-Fi에 로그인한 뒤 이용할 수 있습니다.'),
-                                                                (4, '전산', '포털 로그인이 되지 않습니다.', '비밀번호를 재설정한 뒤에도 문제가 지속되면 전산지원팀에 문의해주세요.'),
-                                                                (4, '전산', '실습실 PC 로그인이 되지 않습니다.', '포털 계정 상태를 확인한 뒤에도 로그인이 되지 않으면 전산지원팀에 문의해주세요.'),
-                                                                (5, '시설', '강의실 시설 고장은 어디에 문의하나요?', '시설관리팀으로 민원을 접수하면 담당자가 확인 후 처리합니다.'),
-                                                                (3, '학사', '수강신청 정정 기간은 어디서 확인하나요?', '학사 공지사항에서 수강신청 정정 기간을 확인할 수 있습니다.'),
-                                                                (6, '장학', '장학금 신청 서류는 어디서 확인하나요?', '학생지원팀 공지사항 또는 장학 안내 페이지에서 확인할 수 있습니다.');
-
 INSERT INTO status_history (
     complaint_id,
     changed_by,
@@ -65,3 +64,5 @@ INSERT INTO complaint_likes (complaint_id, user_id) VALUES
                                                         (2, 1),
                                                         (3, 2),
                                                         (5, 2);
+
+
