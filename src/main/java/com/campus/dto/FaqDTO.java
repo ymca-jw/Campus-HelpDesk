@@ -13,6 +13,9 @@ public class FaqDTO {
     // JOIN 결과 표시용
     private String departmentName;
 
+    // 점수
+    private double finalScore;
+
     public Long getFaqId() {
         return faqId;
     }
@@ -55,4 +58,6 @@ public class FaqDTO {
     public void setDepartmentName(String departmentName) {
         this.departmentName = departmentName;
     }
+    public void setFinalScore(double finalScore) { this.finalScore = finalScore; }
+    public double getFinalScore() { return finalScore; }
 }
