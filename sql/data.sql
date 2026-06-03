@@ -16,12 +16,32 @@ INSERT INTO departments (department_id, name, type, created_at) VALUES
                                                                     (13, '공연예술학부', 'MAJOR', NOW());
 
 INSERT INTO users (login_id, password, name, role, department_id) VALUES
-                                                                      ('student1', '1234', '학생1', 'STUDENT', NULL),
-                                                                      ('student2', '1234', '학생2', 'STUDENT', NULL),
-                                                                      ('staff_it', '1234', '전산담당자', 'STAFF', 4),
-                                                                      ('staff_facility', '1234', '시설담당자', 'STAFF', 5),
-                                                                      ('staff_academic', '1234', '학사담당자', 'STAFF', 3),
-                                                                      ('admin', '1234', '관리자', 'ADMIN', NULL);
+                                                                      ('student1', '1234', '홍길동', 'STUDENT', NULL),
+                                                                      ('student2', '1234', '박길동', 'STUDENT', NULL),
+                                                                      ('staff_it', '1234', '김전산', 'STAFF', 4),
+                                                                      ('staff_facility', '1234', '김시설', 'STAFF', 5),
+                                                                      ('staff_academic', '1234', '김학사', 'STAFF', 3),
+                                                                      ('admin1', '1234', '김관리', 'ADMIN', NULL),
+                                                                      ('student3', '1234', '이길동', 'STUDENT', NULL),
+                                                                      ('student4', '1234', '박철수', 'STUDENT', NULL),
+                                                                      ('student5', '1234', '안철수', 'STUDENT', NULL),
+                                                                      ('staff_iphak', '1234', '김입학', 'STAFF', 4),
+                                                                      ('student6', '1234', '김철수', 'STUDENT', NULL),
+                                                                      ('student7', '1234', '배철수', 'STUDENT', NULL),
+                                                                      ('admin2', '1234', '박관리', 'ADMIN', NULL),
+                                                                      ('software', '1234', '김소웨', 'STAFF', 3),
+                                                                      ('staff_iljari', '1234', '김일자', 'STAFF', 3),
+                                                                      ('student8', '1234', '홍김전', 'STUDENT', NULL),
+                                                                      ('student9', '1234', '이재명', 'STUDENT', NULL),
+                                                                      ('student10', '1234', '김재명', 'STUDENT', NULL),
+                                                                      ('student11', '1234', '박재명', 'STUDENT', NULL),
+                                                                      ('student12', '1234', '윤석열', 'STUDENT', NULL),
+                                                                      ('student13', '1234', '김석열', 'STUDENT', NULL),
+                                                                      ('staff_haksul', '1234', '박학술', 'STAFF', 4),
+                                                                      ('staff_sandam', '1234', '김상담', 'STAFF', 4),
+                                                                      ('staff_kyomu', '1234', '김교무', 'STAFF', 4);
+
+
 
 INSERT INTO complaints (
     writer_id,
