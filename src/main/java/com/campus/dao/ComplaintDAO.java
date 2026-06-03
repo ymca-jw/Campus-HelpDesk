@@ -1,9 +1,13 @@
 package com.campus.dao;
-import com.campus.dto.ComplaintDTO;
-import com.campus.util.DBUtil;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.campus.dto.ComplaintDTO;
+import com.campus.util.DBUtil;
 
 
 public class ComplaintDAO {
@@ -118,5 +122,65 @@ public class ComplaintDAO {
         complaint.setCompletedAt(rs.getTimestamp("completed_at"));
 
         return complaint;
+    }
+ // 1. 민원 등록 (Insert)
+    public void insertComplaint(ComplaintDTO complaint) {
+        String sql = """
+                INSERT INTO complaints 
+                (writer_id, department_id, category, title, content, status, is_private, attached_file) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setLong(1, complaint.getWriterId());
+            pstmt.setLong(2, complaint.getDepartmentId());
+            pstmt.setString(3, complaint.getCategory());
+            pstmt.setString(4, complaint.getTitle());
+            pstmt.setString(5, complaint.getContent());
+            pstmt.setString(6, complaint.getStatus());
+            pstmt.setBoolean(7, complaint.isPrivateFlag());
+            pstmt.setString(8, complaint.getAttachedFile()); 
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("민원 등록 중 오류 발생", e);
+        }
+    }
+
+    // 2. 민원 수정 (Update)
+    public void updateComplaint(ComplaintDTO complaint) {
+        String sql = """
+                UPDATE complaints 
+                SET department_id=?, category=?, title=?, content=?, is_private=?, attached_file=?
+                WHERE complaint_id=?
+                """;
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setLong(1, complaint.getDepartmentId());
+            pstmt.setString(2, complaint.getCategory());
+            pstmt.setString(3, complaint.getTitle());
+            pstmt.setString(4, complaint.getContent());
+            pstmt.setBoolean(5, complaint.isPrivateFlag());
+            pstmt.setString(6, complaint.getAttachedFile());
+            pstmt.setLong(7, complaint.getComplaintId());
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("민원 수정 중 오류 발생", e);
+        }
+    }
+
+    // 3. 민원 삭제 (Delete)
+    public void deleteComplaint(Long complaintId) {
+        String sql = "DELETE FROM complaints WHERE complaint_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, complaintId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("민원 삭제 중 오류 발생", e);
+        }
     }
 }

@@ -15,6 +15,8 @@ public class ComplaintDTO {
     private Timestamp createdAt;        // 작성 날짜
     private Timestamp updatedAt;        // 수정 날짜
     private Timestamp completedAt;      // 완료 날짜
+    private String location;		    //이미지
+    private String attachedFile;		//
 
     // JOIN 결과 표시용
     private String writerName;
@@ -103,5 +105,17 @@ public class ComplaintDTO {
     }
     public void setDepartmentName(String departmentName) {
         this.departmentName = departmentName;
+    }
+    public String getLocation() {
+    	return location; 
+    }
+    public void setLocation(String location) {
+    	this.location = location;
+    }
+    public String getAttachedFile() {
+    	return attachedFile;
+    }
+    public void setAttachedFile(String attachedFile) {
+    	this.attachedFile = attachedFile;
     }
 }
