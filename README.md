@@ -91,12 +91,17 @@ Campus-HelpDesk
 │  └─ main
 │     ├─ java
 │     │  └─ com.campus
-│     │     ├─ controller    클라이언트 요청을 처리하는 Servlet 계층
-│     │     ├─ service       입력값 검증, 권한 확인, 주요 기능 흐름 처리 계층
-│     │     ├─ dao           데이터베이스 접근 및 SQL 실행 계층
+│     │     ├─ controller    Servlet Controller 계층
+│     │     │
+│     │     ├─ service       기능 흐름 처리 및 검증 계층
+│     │     │
+│     │     ├─ dao           DB 접근 및 SQL 실행 계층
+│     │     │
 │     │     ├─ dto           계층 간 데이터 전달 객체
-│     │     ├─ exception     프로젝트 전용 예외 처리 클래스
-│     │     └─ util          DB 연결 등 공통 유틸리티 클래스
+│     │     │
+│     │     ├─ filter        권한 검증 필터
+│     │     │
+│     │     └─ util          공통 유틸리티
 │     │
 │     ├─ resources
 │     │  ├─ db.properties.example
@@ -112,16 +117,19 @@ Campus-HelpDesk
 │        │  ├─ views
 │        │  │  ├─ user
 │        │  │  ├─ complaint
-│        │  │  ├─ manager
+│        │  │  ├─ staff
 │        │  │  ├─ admin
+│        │  │  ├─ test
 │        │  │  └─ error
+│        │  │
 │        │  └─ web.xml
 │        │
 │        └─ index.jsp
 │
 ├─ sql
 │  ├─ schema.sql
-│  └─ data.sql
+│  ├─ data.sql
+│  └─ faq_insert.sql
 │
 ├─ pom.xml
 ├─ .gitignore
@@ -133,36 +141,36 @@ Campus-HelpDesk
 ## 5. URL 구조
 ### User (사용자)
 ```text
-GET  /user/login       로그인 화면
-POST /user/login       로그인 처리
+GET  /user/login        로그인 화면
+POST /user/login        로그인 처리
 
-GET  /user/register    회원가입 화면
-POST /user/register    회원가입 처리
+GET  /user/register     회원가입 화면
+POST /user/register     회원가입 처리
 
-POST /user/logout      로그아웃
-GET  /user/mypage      마이페이지
+POST /user/logout       로그아웃
+GET  /user/mypage       마이페이지
 ```
 
 ### Complaint (민원)
 ```text
-GET  /complaints              민원 목록 조회
-GET  /complaints/detail       민원 상세 조회
+GET  /complaints             민원 목록 조회
+GET  /complaints/detail      민원 상세 조회
 
-GET  /complaints/new          민원 작성 화면
-POST /complaints/check        유사 민원 / FAQ 확인
-POST /complaints/create       민원 등록 처리
+GET  /complaints/new         민원 작성 화면
+POST /complaints/check       유사 민원 / FAQ 추천 확인
+POST /complaints/create      민원 등록 처리
 
-GET  /complaints/edit         민원 수정 화면
-POST /complaints/update       민원 수정 처리
-POST /complaints/delete       민원 삭제 처리
+GET  /complaints/edit        민원 수정 화면
+POST /complaints/update      민원 수정 처리
+POST /complaints/delete      민원 삭제 처리
 
-POST /complaints/like         민원 추천
+POST /complaints/like        민원 추천
 ```
 
 ### Manager (담당자)
 ```text
 GET  /manager/dashboard          담당자 대시보드
-GET  /manager/complaint-manage   담당 부서 민원 목록
+GET  /manager/complaints   담당 부서 민원 목록
 
 POST /manager/answer             담당자 답변 작성
 POST /manager/status             민원 상태 변경
@@ -170,9 +178,17 @@ POST /manager/status             민원 상태 변경
 
 ### Admin (관리자)
 ```text
-GET /admin/dashboard              관리자 대시보드
-GET /admin/complaints-management  전체 민원 관리
-GET /admin/statistics             민원 통계
+GET  /admin/dashboard             관리자 대시보드
+
+GET  /admin/users                 사용자 목록 조회
+POST /admin/users/update          사용자 역할 / 담당부서 수정
+
+GET  /admin/departments           부서 목록 조회
+POST /admin/departments/create    부서 추가
+POST /admin/departments/update    부서명 / 부서유형 수정
+
+GET  /admin/complaints            관리자 민원 관리
+POST /admin/complaints/delete     관리자 민원 삭제
 ```
 
 ---
