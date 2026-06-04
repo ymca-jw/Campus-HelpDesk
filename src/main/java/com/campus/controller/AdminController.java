@@ -47,6 +47,16 @@ public class AdminController extends HttpServlet {
             adminComplaintList(req, res);
             return;
         }
+
+        if ("/admin/users/update".equals(path)
+                || "/admin/departments/create".equals(path)
+                || "/admin/departments/update".equals(path)
+                || "/admin/complaints/delete".equals(path)) {
+            res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            return;
+        }
+
+        res.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     @Override
@@ -58,6 +68,7 @@ public class AdminController extends HttpServlet {
         // 사용자 정보 수정
         if ("/admin/users/update".equals(path)) {
             adminUserUpdate(req, res);
+            return;
         }
         // 부서 추가
         else if("/admin/departments/create".equals(path)) {
@@ -75,7 +86,15 @@ public class AdminController extends HttpServlet {
             return;
         }
 
+        if ("/admin/dashboard".equals(path)
+                || "/admin/users".equals(path)
+                || "/admin/departments".equals(path)
+                || "/admin/complaints".equals(path)) {
+            res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            return;
+        }
 
+        res.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     // 대시보드

@@ -44,6 +44,14 @@ public class AnswerController extends HttpServlet {
             return;
         }
 
+        if ("/staff/answer".equals(path)
+                || "/staff/answer/update".equals(path)
+                || "/staff/answer/delete".equals(path)
+                || "/staff/status".equals(path)) {
+            res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            return;
+        }
+
         res.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
@@ -73,6 +81,13 @@ public class AnswerController extends HttpServlet {
 
         if ("/staff/status".equals(path)) {
             updateStatus(req, res);
+            return;
+        }
+
+        if ("/staff/dashboard".equals(path)
+                || "/staff/complaints".equals(path)
+                || "/staff/complaints/detail".equals(path)) {
+            res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             return;
         }
 

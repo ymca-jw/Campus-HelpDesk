@@ -60,7 +60,16 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
-        res.sendError(HttpServletResponse.SC_NOT_FOUND);    // 400 error (추후 에러페이지 구현 지금은 sendError로 대체)
+        if ("/complaints/check".equals(path)
+                || "/complaints/create".equals(path)
+                || "/complaints/update".equals(path)
+                || "/complaints/delete".equals(path)
+                || "/complaints/like".equals(path)) {
+            res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            return;
+        }
+
+        res.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
     // POST 요청은 여기서 처리
@@ -93,6 +102,15 @@ public class ComplaintController extends HttpServlet {
 
         if ("/complaints/like".equals(path)) {
             complaintLike(req, res);
+            return;
+        }
+
+        if ("/complaints".equals(path)
+                || "/complaints/detail".equals(path)
+                || "/complaints/faq-test".equals(path)
+                || "/complaints/new".equals(path)
+                || "/complaints/edit".equals(path)) {
+            res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             return;
         }
 
@@ -214,7 +232,7 @@ public class ComplaintController extends HttpServlet {
     private void complaintDetail(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         String _id = req.getParameter("id");
         if (_id == null || _id.equals("")) {
-            res.sendError(HttpServletResponse.SC_BAD_REQUEST);  // 400 error (추후 에러페이지 구현 지금은 sendError로 대체)
+            res.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
@@ -224,7 +242,7 @@ public class ComplaintController extends HttpServlet {
             complaintId = Long.parseLong(_id);     // String -> Long
         }
         catch (NumberFormatException e) {
-            res.sendError(HttpServletResponse.SC_BAD_REQUEST);  // 400 error (추후 에러페이지 구현 지금은 sendError로 대체)
+            res.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
