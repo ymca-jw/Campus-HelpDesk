@@ -373,7 +373,7 @@
             <form id="likeForm" action="<%= request.getContextPath() %>/complaints/like" method="post">
                 <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
                 <button class="button primary" id="likeButton" type="submit" data-liked="<%= likedByMe %>">
-                    <%= likedByMe ? "이미 추천함" : "추천" %>
+                    <%= likedByMe ? "추천 완료" : "추천" %>
                 </button>
             </form>
             <p id="likeMessage"></p>
