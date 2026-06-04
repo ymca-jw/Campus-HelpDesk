@@ -140,7 +140,7 @@ public class ComplaintDAO {
             pstmt.setString(5, complaint.getContent());
             pstmt.setString(6, complaint.getStatus());
             pstmt.setBoolean(7, complaint.isPrivateFlag());
-            pstmt.setString(8, complaint.getAttachedFile()); 
+            //pstmt.setString(8, complaint.getAttachedFile()); //첨부파일
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -163,8 +163,8 @@ public class ComplaintDAO {
             pstmt.setString(3, complaint.getTitle());
             pstmt.setString(4, complaint.getContent());
             pstmt.setBoolean(5, complaint.isPrivateFlag());
-            pstmt.setString(6, complaint.getAttachedFile());
-            pstmt.setLong(7, complaint.getComplaintId());
+            //pstmt.setString(6, complaint.getAttachedFile());//첨부파일
+            pstmt.setLong(6, complaint.getComplaintId());
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -181,6 +181,43 @@ public class ComplaintDAO {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("민원 삭제 중 오류 발생", e);
+        }
+    }
+    // 4. 특정 부서의 민원만 조회 (담당자 대시보드용)
+    public List<ComplaintDTO> findByDepartmentId(Long departmentId) {
+        List<ComplaintDTO> complaints = new ArrayList<>();
+        String sql = """
+                SELECT c.complaint_id, c.writer_id, c.department_id, d.name AS department_name,
+                       u.name AS writer_name, c.category, c.title, c.content, c.status,
+                       c.like_count, c.is_private, c.created_at, c.updated_at, c.completed_at
+                FROM complaints c
+                JOIN departments d ON c.department_id = d.department_id
+                JOIN users u ON c.writer_id = u.user_id
+                WHERE c.department_id = ?
+                ORDER BY c.created_at DESC""";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, departmentId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) { complaints.add(mapRow(rs)); }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("부서별 민원 조회 중 오류 발생", e);
+        }
+        return complaints;
+    }
+
+    // 5. 민원 상태 변경 (답변 완료 시 사용)
+    public void updateStatus(Long complaintId, String status) {
+        String sql = "UPDATE complaints SET status = ? WHERE complaint_id = ?";
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, status);
+            pstmt.setLong(2, complaintId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("상태 업데이트 중 오류 발생", e);
         }
     }
 }

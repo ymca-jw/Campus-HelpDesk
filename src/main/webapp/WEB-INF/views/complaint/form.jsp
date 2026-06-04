@@ -10,7 +10,7 @@
 <body>
     <h2>민원 ${empty basket.complaintId ? '접수' : '수정'}</h2>
 
-    <form id="complaintForm" action="${pageContext.request.contextPath}/complaints/${empty basket.complaintId ? 'check' : 'update'}" method="post" enctype="multipart/form-data">
+    <form id="complaintForm" action="${pageContext.request.contextPath}/complaints/${empty basket.complaintId ? 'check' : 'update'}" method="post">
         
         <input type="hidden" name="complaintId" value="${basket.complaintId}">
         <input type="hidden" name="savedFileName" value="${basket.attachedFile}">
@@ -32,6 +32,24 @@
                 </td>
             </tr>
             <tr>
+                <th>상세 카테고리</th>
+                <td>
+                    <select name="category" required style="width: 100%;">
+                        <option value="">-- 카테고리를 선택하세요 --</option>
+                        <option value="전산" ${basket.category == '전산' ? 'selected' : ''}>전산</option>
+                        <option value="시설" ${basket.category == '시설' ? 'selected' : ''}>시설</option>
+                        <option value="교무학적" ${basket.category == '교무학적' ? 'selected' : ''}>교무학적</option>
+                        <option value="장학" ${basket.category == '장학' ? 'selected' : ''}>장학</option>
+                        <option value="학생지원" ${basket.category == '학생지원' ? 'selected' : ''}>학생지원</option>
+                        <option value="수업" ${basket.category == '수업' ? 'selected' : ''}>수업</option>
+                        <option value="상담" ${basket.category == '상담' ? 'selected' : ''}>상담</option>
+                        <option value="취업" ${basket.category == '취업' ? 'selected' : ''}>취업</option>
+                        <option value="인권" ${basket.category == '인권' ? 'selected' : ''}>인권</option>
+                        <option value="기타" ${basket.category == '기타' ? 'selected' : ''}>기타</option>
+                    </select>
+                </td>
+            </tr>
+             <tr>
                 <th>제목</th>
                 <td><input type="text" name="title" value="${basket.title}" required style="width: 100%;"></td>
             </tr>
@@ -47,7 +65,7 @@
                 <td><textarea name="content" rows="10" required style="width: 100%;">${basket.content}</textarea></td>
             </tr>
             
-            <tr>
+            <!--<tr>
                 <th>첨부파일</th>
                 <td>
                     <c:if test="${not empty basket.attachedFile}">
@@ -57,12 +75,12 @@
                         <input type="file" name="attachedFile">
                     </c:if>
                 </td>
-            </tr>
+            </tr>-->
         </table>
 
         <c:if test="${showSimbox}">
             <div style="border: 2px solid red; padding: 15px; margin-top: 20px;">
-                <h3 style="color: red;">🚨 유사한 민원이 있습니다</h3>
+                <h3 style="color: red;">유사한 민원이 있습니다</h3>
                 <ul>
                     <c:forEach var="faq" items="${similarFaqs}">
                         <li><strong>Q. ${faq.question}</strong><br>A. ${faq.answer}</li>
