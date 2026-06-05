@@ -69,7 +69,6 @@
         .header-left {
             display: flex;
             align-items: center;
-            gap: 58px;
         }
 
         .brand img {
@@ -77,22 +76,6 @@
             width: 180px;
             max-height: 52px;
             object-fit: contain;
-        }
-
-        .main-nav {
-            display: flex;
-            align-items: center;
-            gap: 36px;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .main-nav a {
-            padding: 30px 0;
-        }
-
-        .main-nav a.active {
-            color: #007a4d;
         }
 
         .auth-nav {
@@ -104,13 +87,90 @@
         }
 
         .page {
-            max-width: 1120px;
+            max-width: 1280px;
             margin: 0 auto;
             padding: 54px 40px 80px;
         }
 
+        .page-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 36px;
+        }
+
+        .complaint-sidebar {
+            flex: 0 0 240px;
+        }
+
+        .page-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .side-section {
+            margin-bottom: 18px;
+        }
+
+        .side-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border: 0;
+            border-bottom: 1px solid #e5e7eb;
+            background: transparent;
+            cursor: pointer;
+            color: #111827;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 14px 10px;
+            text-align: left;
+        }
+
+        .side-toggle::after {
+            content: "⌄";
+            color: #6b7280;
+            font-size: 18px;
+            transition: transform 0.2s ease;
+        }
+
+        .side-section.collapsed .side-toggle::after {
+            transform: rotate(-90deg);
+        }
+
+        .side-links {
+            overflow: hidden;
+            max-height: 220px;
+            padding: 12px 0 8px 16px;
+            border-left: 1px solid #d1d5db;
+            margin-left: 10px;
+            transition: max-height 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease;
+        }
+
+        .side-section.collapsed .side-links {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .side-links a {
+            display: block;
+            padding: 10px 12px;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .side-links a.active {
+            color: #007a5a;
+            font-weight: 700;
+            border-left: 2px solid #007a5a;
+            margin-left: -17px;
+            padding-left: 27px;
+        }
+
         .detail-header {
             display: flex;
+            position: relative;
             align-items: flex-start;
             justify-content: space-between;
             gap: 24px;
@@ -126,15 +186,20 @@
         }
 
         .detail-title-area {
+            flex: 1 1 auto;
             min-width: 0;
             max-width: calc(100% - 140px);
         }
 
         .detail-action-area {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 14px;
             flex: 0 0 auto;
         }
 
-        .detail-header p {
+        .detail-header .post-meta {
             margin: 14px 0 0;
             color: #667085;
             font-size: 16px;
@@ -174,6 +239,15 @@
             font-size: 14px;
         }
 
+        .meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-top: 14px;
+            width: 100%;
+        }
+
         .post-meta strong {
             color: #344054;
         }
@@ -188,6 +262,53 @@
             background: #f8fafc;
             color: #344054;
             font-weight: 700;
+        }
+
+        .like-form {
+            display: inline-flex;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+
+        .like-stack {
+            display: flex;
+            position: absolute;
+            right: 0;
+            bottom: 24px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .heart-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            border: 0;
+            background: transparent;
+            color: #475467;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        .heart-button svg {
+            width: 20px;
+            height: 20px;
+            stroke: #98a2b3;
+            stroke-width: 1.8;
+            fill: transparent;
+        }
+
+        .heart-button.liked svg {
+            stroke: #e11d48;
+            fill: #e11d48;
+        }
+
+        .heart-button:disabled {
+            cursor: default;
+            opacity: 0.7;
         }
 
         .content-section {
@@ -208,21 +329,6 @@
             padding: 24px;
             line-height: 1.75;
             white-space: pre-wrap;
-        }
-
-        .like-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            margin: 38px 0;
-            padding: 24px 0;
-        }
-
-        .like-count {
-            color: #344054;
-            font-size: 18px;
-            font-weight: 700;
         }
 
         #likeMessage {
@@ -319,9 +425,13 @@
                 gap: 20px;
             }
 
-            .main-nav {
-                gap: 18px;
-                font-size: 16px;
+            .page-layout {
+                flex-direction: column;
+            }
+
+            .complaint-sidebar {
+                width: 100%;
+                flex-basis: auto;
             }
 
             .detail-header {
@@ -340,10 +450,6 @@
                 <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
             </a>
 
-            <nav class="main-nav">
-                <a class="active" href="${pageContext.request.contextPath}/complaints">민원 목록</a>
-                <a href="${pageContext.request.contextPath}/complaints/new">민원 작성</a>
-            </nav>
         </div>
 
         <div class="auth-nav">
@@ -354,42 +460,79 @@
     </div>
 </header>
 
-<main class="page">
+<main class="page page-layout">
+    <aside class="complaint-sidebar">
+        <div class="side-section">
+            <button type="button" class="side-toggle">민원 메뉴</button>
+            <div class="side-links">
+                <a class="active" href="<%= request.getContextPath() %>/complaints">민원 목록</a>
+                <a href="<%= request.getContextPath() %>/complaints/new">민원 작성</a>
+            </div>
+        </div>
+
+        <div class="side-section">
+            <button type="button" class="side-toggle">내 민원</button>
+            <div class="side-links">
+                <a href="#">내가 작성한 민원</a>
+                <a href="#">내가 추천한 민원</a>
+            </div>
+        </div>
+
+        <div class="side-section">
+            <button type="button" class="side-toggle">민원 상태</button>
+            <div class="side-links">
+                <a href="<%= request.getContextPath() %>/complaints?status=RECEIVED">접수</a>
+                <a href="<%= request.getContextPath() %>/complaints?status=REVIEWING">검토중</a>
+                <a href="<%= request.getContextPath() %>/complaints?status=PROCESSING">처리중</a>
+                <a href="<%= request.getContextPath() %>/complaints?status=COMPLETED">완료</a>
+                <a href="<%= request.getContextPath() %>/complaints?status=REJECTED">반려</a>
+            </div>
+        </div>
+    </aside>
+
+    <section class="page-content">
     <% if (complaint == null) { %>
         <div class="empty-answer">민원 정보를 불러올 수 없습니다.</div>
     <% } else { %>
         <section class="detail-header">
             <div class="detail-title-area">
                 <h1><%= complaint.getTitle() %></h1>
-                <p class="post-meta">
-                    <strong><%= complaint.getWriterName() %></strong>
-                    <span>·</span>
-                    <span><%= complaint.getDepartmentName() %></span>
-                    <span>·</span>
-                    <span><%= complaint.getCategory() %></span>
-                    <span>·</span>
-                    <span><%= dateText(complaint.getCreatedAt()) %></span>
-                    <span class="status-pill"><%= statusText(complaint.getStatus()) %></span>
-                </p>
+                <div class="meta-row">
+                    <div class="post-meta">
+                        <strong><%= complaint.getWriterName() %></strong>
+                        <span>·</span>
+                        <span><%= complaint.getDepartmentName() %></span>
+                        <span>·</span>
+                        <span><%= complaint.getCategory() %></span>
+                        <span>·</span>
+                        <span><%= dateText(complaint.getCreatedAt()) %></span>
+                        <span class="status-pill"><%= statusText(complaint.getStatus()) %></span>
+                    </div>
+                </div>
             </div>
             <div class="detail-action-area">
                 <button type="button" class="button secondary" id="timelineButton">타임라인</button>
+                <div class="like-stack">
+                    <form class="like-form" id="likeForm" action="<%= request.getContextPath() %>/complaints/like" method="post">
+                        <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+                        <button class="heart-button <%= likedByMe ? "liked" : "" %>"
+                                id="likeButton"
+                                type="submit"
+                                data-liked="<%= likedByMe %>"
+                                aria-label="민원 추천">
+                            <svg id="heartIcon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20.8 4.6c-1.9-1.8-5-1.7-6.8.1L12 6.7 10 4.7C8.2 2.9 5.1 2.8 3.2 4.6c-2 1.9-2.1 5.1-.1 7.1L12 20.3l8.9-8.6c2-2 1.9-5.2-.1-7.1z"/>
+                            </svg>
+                            <span id="likeCount"><%= complaint.getLikeCount() %></span>
+                        </button>
+                    </form>
+                    <span id="likeMessage"></span>
+                </div>
             </div>
         </section>
 
         <section class="content-section">
             <div class="content-box"><%= complaint.getContent() %></div>
-        </section>
-
-        <section class="like-area">
-            <div class="like-count">추천 수 <span id="likeCount"><%= complaint.getLikeCount() %></span></div>
-            <form id="likeForm" action="<%= request.getContextPath() %>/complaints/like" method="post">
-                <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
-                <button class="button primary" id="likeButton" type="submit" data-liked="<%= likedByMe %>">
-                    <%= likedByMe ? "추천 완료" : "추천" %>
-                </button>
-            </form>
-            <p id="likeMessage"></p>
         </section>
 
         <section class="content-section">
@@ -433,9 +576,16 @@
     <% } %>
 
     <a class="bottom-link" href="<%= request.getContextPath() %>/complaints">목록으로</a>
+    </section>
 </main>
 
 <script>
+    document.querySelectorAll(".side-toggle").forEach(function (button) {
+        button.addEventListener("click", function () {
+            button.closest(".side-section").classList.toggle("collapsed");
+        });
+    });
+
     const likeForm = document.getElementById("likeForm");
     const likeButton = document.getElementById("likeButton");
     const likeCount = document.getElementById("likeCount");
@@ -444,11 +594,6 @@
     if (likeForm) {
         likeForm.addEventListener("submit", async function (event) {
             event.preventDefault();
-
-            if (likeButton.dataset.liked === "true") {
-                alert("이미 추천한 민원입니다.");
-                return;
-            }
 
             likeButton.disabled = true;
             likeMessage.textContent = "";
@@ -470,15 +615,11 @@
 
                 const data = await response.json();
 
-                if (data.result === "success" || data.result === "duplicate") {
+                if (data.result === "success" || data.result === "cancel") {
                     likeCount.textContent = data.likeCount;
-                    likeButton.textContent = "이미 추천함";
-                    likeButton.dataset.liked = "true";
+                    likeButton.dataset.liked = String(data.liked);
+                    likeButton.classList.toggle("liked", data.liked);
                     likeButton.disabled = false;
-
-                    if (data.result === "duplicate") {
-                        alert("이미 추천한 민원입니다.");
-                    }
                     return;
                 }
 

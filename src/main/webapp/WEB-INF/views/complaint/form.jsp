@@ -41,7 +41,6 @@
         .header-left {
             display: flex;
             align-items: center;
-            gap: 58px;
         }
 
         .brand img {
@@ -49,22 +48,6 @@
             width: 180px;
             max-height: 52px;
             object-fit: contain;
-        }
-
-        .main-nav {
-            display: flex;
-            align-items: center;
-            gap: 36px;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .main-nav a {
-            padding: 30px 0;
-        }
-
-        .main-nav a.active {
-            color: #007a4d;
         }
 
         .auth-nav {
@@ -76,9 +59,85 @@
         }
 
         .page {
-            max-width: 1120px;
+            max-width: 1280px;
             margin: 0 auto;
             padding: 54px 40px 80px;
+        }
+
+        .page-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 36px;
+        }
+
+        .complaint-sidebar {
+            flex: 0 0 240px;
+        }
+
+        .page-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .side-section {
+            margin-bottom: 18px;
+        }
+
+        .side-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border: 0;
+            border-bottom: 1px solid #e5e7eb;
+            background: transparent;
+            cursor: pointer;
+            color: #111827;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 14px 10px;
+            text-align: left;
+        }
+
+        .side-toggle::after {
+            content: "⌄";
+            color: #6b7280;
+            font-size: 18px;
+            transition: transform 0.2s ease;
+        }
+
+        .side-section.collapsed .side-toggle::after {
+            transform: rotate(-90deg);
+        }
+
+        .side-links {
+            overflow: hidden;
+            max-height: 220px;
+            padding: 12px 0 8px 16px;
+            border-left: 1px solid #d1d5db;
+            margin-left: 10px;
+            transition: max-height 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease;
+        }
+
+        .side-section.collapsed .side-links {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .side-links a {
+            display: block;
+            padding: 10px 12px;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .side-links a.active {
+            color: #007a5a;
+            font-weight: 700;
+            border-left: 2px solid #007a5a;
+            margin-left: -17px;
+            padding-left: 27px;
         }
 
         .page-title {
@@ -324,9 +383,13 @@
                 gap: 20px;
             }
 
-            .main-nav {
-                gap: 18px;
-                font-size: 16px;
+            .page-layout {
+                flex-direction: column;
+            }
+
+            .complaint-sidebar {
+                width: 100%;
+                flex-basis: auto;
             }
 
             .form-grid {
@@ -348,10 +411,6 @@
                 <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
             </a>
 
-            <nav class="main-nav">
-                <a href="${pageContext.request.contextPath}/complaints">민원 목록</a>
-                <a class="active" href="${pageContext.request.contextPath}/complaints/new">민원 작성</a>
-            </nav>
         </div>
 
         <div class="auth-nav">
@@ -362,11 +421,41 @@
     </div>
 </header>
 
-<main class="page">
-    <section class="page-title">
-        <h1>${empty basket.complaintId ? '민원 작성' : '민원 수정'}</h1>
-        <p>민원 내용을 작성하면 제출 전 유사한 FAQ와 기존 민원을 먼저 확인할 수 있습니다.</p>
-    </section>
+<main class="page page-layout">
+    <aside class="complaint-sidebar">
+        <div class="side-section">
+            <button type="button" class="side-toggle">민원 메뉴</button>
+            <div class="side-links">
+                <a href="${pageContext.request.contextPath}/complaints">민원 목록</a>
+                <a class="active" href="${pageContext.request.contextPath}/complaints/new">민원 작성</a>
+            </div>
+        </div>
+
+        <div class="side-section">
+            <button type="button" class="side-toggle">내 민원</button>
+            <div class="side-links">
+                <a href="#">내가 작성한 민원</a>
+                <a href="#">내가 추천한 민원</a>
+            </div>
+        </div>
+
+        <div class="side-section">
+            <button type="button" class="side-toggle">민원 상태</button>
+            <div class="side-links">
+                <a href="${pageContext.request.contextPath}/complaints?status=RECEIVED">접수</a>
+                <a href="${pageContext.request.contextPath}/complaints?status=REVIEWING">검토중</a>
+                <a href="${pageContext.request.contextPath}/complaints?status=PROCESSING">처리중</a>
+                <a href="${pageContext.request.contextPath}/complaints?status=COMPLETED">완료</a>
+                <a href="${pageContext.request.contextPath}/complaints?status=REJECTED">반려</a>
+            </div>
+        </div>
+    </aside>
+
+    <section class="page-content">
+        <section class="page-title">
+            <h1>${empty basket.complaintId ? '민원 작성' : '민원 수정'}</h1>
+            <p>민원 내용을 작성하면 제출 전 유사한 FAQ와 기존 민원을 먼저 확인할 수 있습니다.</p>
+        </section>
 
     <form id="complaintForm"
           class="form-panel"
@@ -522,9 +611,16 @@
             </div>
         </c:if>
     </form>
+    </section>
 </main>
 
 <script>
+    document.querySelectorAll(".side-toggle").forEach(function (button) {
+        button.addEventListener("click", function () {
+            button.closest(".side-section").classList.toggle("collapsed");
+        });
+    });
+
     const allDepts = [
         <c:forEach var="d" items="${departments}">
         { id: '${d.departmentId}', name: '${d.name}', type: '${d.type}' },
