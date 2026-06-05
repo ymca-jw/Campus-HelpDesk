@@ -2,8 +2,12 @@ package com.campus.controller;
 
 import com.campus.dto.AnswerDTO;
 import com.campus.dto.ComplaintDTO;
+import com.campus.dto.DepartmentDTO;
 import com.campus.dto.StatusHistoryDTO;
 import com.campus.service.AnswerService;
+import com.campus.service.ComplaintService;
+import com.campus.service.DepartmentService;
+import com.campus.util.CategoryConstants;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,7 +16,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +24,8 @@ import java.util.Map;
 public class AnswerController extends HttpServlet {
 
     private final AnswerService answerService = new AnswerService();
+    private final DepartmentService departmentService = new DepartmentService();
+    private final ComplaintService complaintService = new ComplaintService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -100,13 +105,15 @@ public class AnswerController extends HttpServlet {
         // TODO: 로그인 기능 완성 후 session의 loginUser.getDepartmentId()로 변경
         Long staffDepartmentId = 5L;
 
-        int receivedCount = answerService.countComplaintsByDepartmentAndStatus(staffDepartmentId, "RECEIVED");
-        int processingCount = answerService.countComplaintsByDepartmentAndStatus(staffDepartmentId, "PROCESSING");
-        int completedCount = answerService.countComplaintsByDepartmentAndStatus(staffDepartmentId, "COMPLETED");
+        DepartmentDTO staffDepartment = departmentService.findDepartmentById(staffDepartmentId);
+        Map<String, Integer> statusCounts = answerService.countComplaintsByStatuses(staffDepartmentId);
+        List<ComplaintDTO> pendingComplaints = answerService.findPendingComplaintsByDepartment(staffDepartmentId, 3);
+        List<ComplaintDTO> recentComplaints = answerService.findRecentComplaintsByDepartment(staffDepartmentId, 3);
 
-        req.setAttribute("receivedCount", receivedCount);
-        req.setAttribute("processingCount", processingCount);
-        req.setAttribute("completedCount", completedCount);
+        req.setAttribute("staffDepartment", staffDepartment);
+        req.setAttribute("statusCounts", statusCounts);
+        req.setAttribute("pendingComplaints", pendingComplaints);
+        req.setAttribute("recentComplaints", recentComplaints);
 
         req.getRequestDispatcher("/WEB-INF/views/staff/dashboard.jsp").forward(req, res);
     }
@@ -117,20 +124,93 @@ public class AnswerController extends HttpServlet {
         // TODO: 로그인 완성 후 session의 loginUser.getDepartmentId()로 변경
         Long staffDepartmentId = 5L;
 
-        List<ComplaintDTO> complaints = answerService.findComplaintsByDepartment(staffDepartmentId);
+        String departmentType = req.getParameter("departmentType");
+        String category = req.getParameter("category");
+        String status = req.getParameter("status");
+        String searchType = req.getParameter("searchType");
+        String keyword = req.getParameter("keyword");
+        String likeSort = req.getParameter("likeSort");
+        String quickFilter = req.getParameter("quickFilter");
 
-        Map<Long, AnswerDTO> answersByComplaintId = new HashMap<>();
+        if (!"asc".equals(likeSort) && !"desc".equals(likeSort)) {
+            likeSort = "";
+        }
 
-        for (ComplaintDTO complaint : complaints) {
-            AnswerDTO answer = answerService.findAnswer(complaint.getComplaintId());
+        if ("pending".equals(quickFilter)) {
+            status = "PENDING";
+        } else if ("recent".equals(quickFilter)) {
+            status = "";
+            likeSort = "";
+        } else {
+            quickFilter = "";
+        }
 
-            if (answer != null) {
-                answersByComplaintId.put(complaint.getComplaintId(), answer);
+        String nextLikeSort = "asc".equals(likeSort) ? "desc" : "asc";
+
+        int page = 1;
+        String pageParam = req.getParameter("page");
+
+        if (pageParam != null && !pageParam.isBlank()) {
+            try {
+                page = Integer.parseInt(pageParam);
+            }
+            catch (NumberFormatException e) {
+                page = 1;
             }
         }
 
+        if (page <= 0) {
+            page = 1;
+        }
+
+        int pageSize = 20;
+        int totalCount = complaintService.countComplaintList(
+                departmentType,
+                staffDepartmentId,
+                category,
+                status,
+                searchType,
+                keyword
+        );
+        int totalPages = (int) Math.ceil((double) totalCount / pageSize);
+
+        if (totalPages == 0) {
+            totalPages = 1;
+        }
+
+        if (page > totalPages) {
+            page = totalPages;
+        }
+
+        List<ComplaintDTO> complaints = complaintService.findComplaintList(
+                departmentType,
+                staffDepartmentId,
+                category,
+                status,
+                searchType,
+                keyword,
+                likeSort,
+                page,
+                pageSize
+        );
+
+        DepartmentDTO staffDepartment = departmentService.findDepartmentById(staffDepartmentId);
+
         req.setAttribute("complaints", complaints);
-        req.setAttribute("answersByComplaintId", answersByComplaintId);
+        req.setAttribute("staffDepartment", staffDepartment);
+        req.setAttribute("categories", CategoryConstants.CATEGORIES);
+        req.setAttribute("departmentType", departmentType);
+        req.setAttribute("category", category);
+        req.setAttribute("status", status);
+        req.setAttribute("searchType", searchType);
+        req.setAttribute("keyword", keyword);
+        req.setAttribute("likeSort", likeSort);
+        req.setAttribute("nextLikeSort", nextLikeSort);
+        req.setAttribute("quickFilter", quickFilter);
+        req.setAttribute("page", page);
+        req.setAttribute("pageSize", pageSize);
+        req.setAttribute("totalCount", totalCount);
+        req.setAttribute("totalPages", totalPages);
 
         req.getRequestDispatcher("/WEB-INF/views/staff/complaints.jsp").forward(req, res);
     }
@@ -230,10 +310,32 @@ public class AnswerController extends HttpServlet {
             return;
         }
 
+        String reason = req.getParameter("reason");
+
         Long staffId = 3L; // TODO: 로그인 기능 완성 후 session의 loginUser.getUserId()로 변경
-        answerService.updateComplaintStatus(complaintId, status, staffId);
+        answerService.updateComplaintStatus(complaintId, status, staffId, reason);
+
+        if (isAjaxRequest(req)) {
+            res.setContentType("application/json; charset=UTF-8");
+            res.getWriter().write("{\"result\":\"success\",\"status\":\"" + status
+                    + "\",\"statusText\":\"" + statusText(status) + "\"}");
+            return;
+        }
 
         res.sendRedirect(req.getContextPath() + "/staff/complaints/detail?id=" + complaintId);
+    }
+
+    private boolean isAjaxRequest(HttpServletRequest req) {
+        return "XMLHttpRequest".equals(req.getHeader("X-Requested-With"));
+    }
+
+    private String statusText(String status) {
+        if ("RECEIVED".equals(status)) return "접수";
+        if ("REVIEWING".equals(status)) return "검토중";
+        if ("PROCESSING".equals(status)) return "처리중";
+        if ("COMPLETED".equals(status)) return "완료";
+        if ("REJECTED".equals(status)) return "반려";
+        return status;
     }
 
     private Long parseLongParam(HttpServletRequest req, HttpServletResponse res, String name) throws IOException {
