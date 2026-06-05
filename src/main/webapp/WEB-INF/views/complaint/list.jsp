@@ -12,6 +12,11 @@
         if ("REJECTED".equals(status)) return "반려";
         return status;
     }
+
+    private String dateText(java.util.Date date) {
+        if (date == null) return "";
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+    }
 %>
 
 <%
@@ -365,12 +370,21 @@
             text-align: center;
         }
 
+        .complaint-main {
+            min-width: 0;
+            max-width: 560px;
+        }
+
         .complaint-title {
-            display: inline-block;
+            display: block;
+            max-width: 100%;
             margin-bottom: 8px;
             color: #111827;
             font-size: 18px;
             font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .complaint-title:hover {
@@ -714,7 +728,7 @@
                     <% for (ComplaintDTO complaint : complaints) { %>
                     <li class="complaint-item">
                         <div class="q-mark">Q</div>
-                        <div>
+                        <div class="complaint-main">
                             <a class="complaint-title" href="<%= request.getContextPath() %>/complaints/detail?id=<%= complaint.getComplaintId() %>">
                                 <%= complaint.getTitle() %>
                             </a>
@@ -722,7 +736,7 @@
                                 <span class="badge"><%= complaint.getCategory() %></span>
                                 <span><%= complaint.getDepartmentName() %></span>
                                 <span>·</span>
-                                <span><%= complaint.getCreatedAt() %></span>
+                                <span><%= dateText(complaint.getCreatedAt()) %></span>
                             </div>
                         </div>
                         <div class="status-badge"><%= statusText(complaint.getStatus()) %></div>
