@@ -3,12 +3,27 @@
 <%@ page import="com.campus.dto.UserDTO" %>
 <%@ page import="com.campus.dto.DepartmentDTO" %>
 
+<%!
+    private String roleText(String role) {
+        if ("STUDENT".equals(role)) return "학생";
+        if ("STAFF".equals(role)) return "담당자";
+        if ("ADMIN".equals(role)) return "관리자";
+        return role;
+    }
+
+    private String dateText(java.util.Date date) {
+        if (date == null) return "";
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+    }
+%>
+
 <%
   List<UserDTO> users = (List<UserDTO>) request.getAttribute("users");
   List<DepartmentDTO> departments = (List<DepartmentDTO>) request.getAttribute("departments");
   List<String> roles = (List<String>) request.getAttribute("roles");
 
   String selectedRole = (String) request.getAttribute("selectedRole");
+  Long selectedDepartmentId = (Long) request.getAttribute("selectedDepartmentId");
   String searchType = (String) request.getAttribute("searchType");
   String keyword = (String) request.getAttribute("keyword");
 
@@ -23,243 +38,382 @@
   if (totalPages == null) totalPages = 1;
   if (totalCount == null) totalCount = 0;
 
+  String selectedDepartmentParam =
+          selectedDepartmentId == null ? "" : String.valueOf(selectedDepartmentId);
+
   String queryString = "role=" + selectedRole
+          + "&departmentId=" + selectedDepartmentParam
           + "&searchType=" + searchType
           + "&keyword=" + keyword;
 %>
 
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
+<head>
     <meta charset="UTF-8">
-    <title>관리자 - 사용자 관리 테스트</title>
+    <title>관리자 - 사용자 관리</title>
 
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 40px;
-      }
+        * { box-sizing: border-box; }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
+        body {
+            margin: 0;
+            color: #111827;
+            background-color: #ffffff;
+            font-family: Arial, "Noto Sans KR", sans-serif;
+        }
 
-      th, td {
-        border: 1px solid #ccc;
-        padding: 10px;
-        text-align: center;
-      }
+        a { color: inherit; text-decoration: none; }
 
-      th {
-        background-color: #f2f2f2;
-      }
+        /* ── Header ── */
+        .admin-topbar { border-bottom: 1px solid #e5e7eb; background: #fff; }
 
-      select, button, input {
-        padding: 6px;
-      }
+        .admin-header-inner {
+            display: flex; align-items: center; justify-content: space-between;
+            max-width: 1280px; height: 82px; margin: 0 auto; padding: 0 40px;
+        }
 
-      .top-menu {
-        margin-bottom: 20px;
-      }
+        .admin-logo img { display: block; width: 180px; max-height: 52px; object-fit: contain; }
 
-      .top-menu a {
-        margin-right: 12px;
-      }
+        .login-area { display: flex; align-items: center; gap: 16px; color: #475467; font-size: 14px; }
 
-      .search-box {
-        margin: 20px 0;
-        padding: 15px;
-        border: 1px solid #ccc;
-        background-color: #f9f9f9;
-      }
+        /* ── Layout ── */
+        .admin-layout {
+            display: flex; gap: 36px;
+            max-width: 1280px; margin: 54px auto 80px; padding: 0 40px;
+        }
 
-      .search-box select,
-      .search-box input,
-      .search-box button {
-        margin-right: 8px;
-      }
+        .admin-sidebar { flex: 0 0 240px; }
+        .admin-content  { flex: 1; min-width: 0; }
 
-      .pagination {
-        margin-top: 25px;
-        text-align: center;
-      }
+        /* ── Sidebar ── */
+        .side-section { margin-bottom: 18px; }
 
-      .pagination a,
-      .pagination span {
-        display: inline-block;
-        margin: 0 3px;
-        padding: 6px 10px;
-        border: 1px solid #ccc;
-        text-decoration: none;
-        color: #333;
-      }
+        .side-toggle {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; border: 0; border-bottom: 1px solid #e5e7eb;
+            background: transparent; cursor: pointer;
+            color: #111827; font-size: 18px; font-weight: 700;
+            padding: 14px 10px; text-align: left;
+        }
 
-      .pagination .current {
-        font-weight: bold;
-        background-color: #eee;
-      }
+        .side-toggle::after {
+            content: "⌄"; color: #6b7280; font-size: 18px;
+            transition: transform 0.2s ease;
+        }
 
-      .count-info {
-        margin-top: 15px;
-        color: #555;
-      }
+        .side-section.collapsed .side-toggle::after { transform: rotate(-90deg); }
+
+        .side-links {
+            overflow: hidden; max-height: 260px;
+            padding: 12px 0 8px 16px; border-left: 1px solid #d1d5db; margin-left: 10px;
+            transition: max-height 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease;
+        }
+
+        .side-section.collapsed .side-links { max-height: 0; padding-top: 0; padding-bottom: 0; }
+
+        .side-links a { display: block; padding: 10px 12px; color: #111827; }
+
+        .side-links a.active {
+            color: #007a5a; font-weight: 700;
+            border-left: 2px solid #007a5a; margin-left: -17px; padding-left: 27px;
+        }
+
+        /* ── Title ── */
+        .admin-content h1 { margin: 0; font-size: 42px; line-height: 1.2; }
+        .admin-content > p  { margin: 14px 0 0; color: #667085; font-size: 18px; }
+
+        /* ── Filter ── */
+        .filter-panel {
+            display: grid; grid-template-columns: 1fr 1fr 1fr minmax(0, 1.2fr) auto; gap: 12px;
+            margin-top: 28px; padding: 18px;
+            border: 1px solid #edf0f4; border-radius: 8px; background: #f8fafc;
+        }
+
+        .filter-panel select,
+        .filter-panel input[type="text"] {
+            width: 100%; height: 46px; border: 0; border-radius: 8px;
+            background: #fff; padding: 0 14px; color: #344054; font-size: 14px; outline: none;
+        }
+
+        .filter-actions { display: flex; gap: 8px; }
+
+        .filter-actions button,
+        .filter-actions a {
+            display: inline-flex; align-items: center; justify-content: center;
+            height: 46px; padding: 0 18px; border-radius: 8px;
+            font-size: 14px; font-weight: 700; white-space: nowrap;
+        }
+
+        .filter-actions button {
+            border: 0; background: #007a5a; color: #fff; cursor: pointer;
+        }
+
+        .filter-actions a {
+            border: 1px solid #d0d5dd; background: #fff; color: #475467;
+        }
+
+        /* ── List header ── */
+        .list-header {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            margin-top: 40px; padding-bottom: 22px; border-bottom: 2px solid #667085;
+        }
+
+        .list-header h2 { margin: 0 0 6px; font-size: 28px; }
+        .list-header p  { margin: 0; color: #667085; font-size: 14px; }
+
+        /* ── Table ── */
+        table { width: 100%; border-collapse: collapse; }
+
+        th, td {
+            border: 0; border-bottom: 1px solid #e4e7ec;
+            padding: 14px 10px; text-align: center; vertical-align: middle;
+        }
+
+        th { color: #667085; background-color: #f8fafc; font-size: 14px; font-weight: 700; }
+
+        .empty-message {
+            padding: 42px 0; border-bottom: 1px solid #d9dee7;
+            color: #667085; text-align: center;
+        }
+
+        /* ── Inline form ── */
+        .inline-form {
+            display: flex; align-items: center; gap: 8px; justify-content: center;
+        }
+
+        .inline-form select {
+            height: 36px; padding: 0 10px;
+            border: 1px solid #d0d5dd; border-radius: 6px;
+            background: #fff; color: #344054; font-size: 13px; outline: none;
+        }
+
+        .inline-form select:disabled {
+            background: #f2f4f7; color: #98a2b3; cursor: not-allowed;
+        }
+
+        .btn-edit {
+            height: 36px; padding: 0 14px;
+            border: 1px solid #d0d5dd; border-radius: 6px;
+            background: #fff; color: #344054; font-size: 13px;
+            cursor: pointer; white-space: nowrap;
+        }
+
+        .btn-edit:hover { background: #f9fafb; border-color: #007a5a; color: #007a5a; }
+
+        /* ── Pagination ── */
+        .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 28px; }
+
+        .pagination a,
+        .pagination strong {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 36px; height: 36px;
+            border: 1px solid #d0d5dd; border-radius: 8px;
+            padding: 0 10px; color: #475467; background: #fff; font-size: 14px;
+        }
+
+        .pagination strong { border-color: #0b7a55; background: #0b7a55; color: #fff; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .admin-header-inner, .admin-layout { padding-left: 20px; padding-right: 20px; }
+            .admin-layout { flex-direction: column; }
+            .admin-sidebar { width: 100%; flex-basis: auto; }
+            .filter-panel { grid-template-columns: 1fr; }
+            .table-wrap { overflow-x: auto; }
+            .inline-form { flex-wrap: wrap; }
+        }
     </style>
-  </head>
+</head>
+<body>
 
-  <body>
+<header class="admin-topbar">
+    <div class="admin-header-inner">
+        <a class="admin-logo" href="<%= request.getContextPath() %>/admin/dashboard">
+            <img src="<%= request.getContextPath() %>/assets/images/logo.svg" alt="서경대학교">
+        </a>
+        <div class="login-area">
+            <a href="#">로그인</a>
+            <a href="#">마이페이지</a>
+            <a href="#">로그아웃</a>
+        </div>
+    </div>
+</header>
 
-  <h1>관리자 - 사용자 관리 테스트</h1>
+<main class="admin-layout">
+    <aside class="admin-sidebar">
+        <div class="side-section">
+            <button type="button" class="side-toggle">관리자 메뉴</button>
+            <div class="side-links">
+                <a href="<%= request.getContextPath() %>/admin/dashboard">메인</a>
+                <a class="active" href="<%= request.getContextPath() %>/admin/users">사용자 관리</a>
+                <a href="<%= request.getContextPath() %>/admin/departments">부서 관리</a>
+                <a href="<%= request.getContextPath() %>/admin/complaints">민원 관리</a>
+            </div>
+        </div>
+    </aside>
 
-  <div class="top-menu">
-    <a href="<%= request.getContextPath() %>/admin/dashboard">대시보드</a>
-    <a href="<%= request.getContextPath() %>/admin/departments">부서 관리</a>
-    <a href="<%= request.getContextPath() %>/admin/complaints">민원 관리</a>
-  </div>
+    <section class="admin-content">
+        <h1>사용자 관리</h1>
+        <p>전체 사용자를 조회하고 역할 및 담당부서를 관리할 수 있습니다.</p>
 
-  <hr>
+        <form class="filter-panel" action="<%= request.getContextPath() %>/admin/users" method="get">
+            <select name="role" aria-label="역할">
+                <option value="" <%= selectedRole.isBlank() ? "selected" : "" %>>역할 전체</option>
+                <% if (roles != null) { %>
+                <% for (String role : roles) { %>
+                <option value="<%= role %>"
+                        <%= role.equals(selectedRole) ? "selected" : "" %>>
+                    <%= roleText(role) %>
+                </option>
+                <% } %>
+                <% } %>
+            </select>
 
-  <%-- 검색, 필터 part --%>
-  <div class="search-box">
-    <form action="<%= request.getContextPath() %>/admin/users" method="get">
+            <select name="departmentId" id="departmentFilter" aria-label="담당부서">
+                <option value="" <%= selectedDepartmentParam.isBlank() ? "selected" : "" %>>담당부서 전체</option>
+                <% if (departments != null) { %>
+                <% for (DepartmentDTO dept : departments) { %>
+                <option value="<%= dept.getDepartmentId() %>"
+                        <%= selectedDepartmentId != null
+                                && selectedDepartmentId.equals(dept.getDepartmentId())
+                                ? "selected" : "" %>>
+                    <%= dept.getName() %>
+                </option>
+                <% } %>
+                <% } %>
+            </select>
 
-      <label>역할</label>
-      <select name="role">
-        <option value="" <%= selectedRole.isBlank() ? "selected" : "" %>>전체</option>
+            <select name="searchType" aria-label="검색기준">
+                <option value="loginId" <%= "loginId".equals(searchType) ? "selected" : "" %>>ID</option>
+                <option value="name" <%= "name".equals(searchType) ? "selected" : "" %>>이름</option>
+            </select>
 
-        <% if (roles != null) { %>
-        <% for (String role : roles) { %>
-        <option value="<%= role %>"
-                <%= role.equals(selectedRole) ? "selected" : "" %>>
-          <%= role %>
-        </option>
-        <% } %>
-        <% } %>
-      </select>
+            <input type="text" name="keyword" value="<%= keyword %>" placeholder="검색어를 입력하세요">
 
-      <label>검색 기준</label>
-      <select name="searchType">
-        <option value="loginId" <%= "loginId".equals(searchType) ? "selected" : "" %>>로그인 ID</option>
-        <option value="name" <%= "name".equals(searchType) ? "selected" : "" %>>이름</option>
-      </select>
-
-      <input type="text" name="keyword" value="<%= keyword %>" placeholder="검색어 입력">
-
-      <button type="submit">검색</button>
-
-      <a href="<%= request.getContextPath() %>/admin/users">초기화</a>
-    </form>
-  </div>
-
-  <div class="count-info">
-    총 사용자 수: <%= totalCount %>명 /
-    현재 페이지: <%= currentPage %> / <%= totalPages %>
-  </div>
-
-  <% if (users == null || users.isEmpty()) { %>
-
-  <p>조회된 사용자가 없습니다.</p>
-
-  <% } else { %>
-
-  <table>
-    <thead>
-    <tr>
-      <th>사용자 ID</th>
-      <th>로그인 ID</th>
-      <th>이름</th>
-      <th>현재 역할</th>
-      <th>현재 담당부서</th>
-      <th>가입일</th>
-      <th>역할 / 담당부서 수정</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    <% for (UserDTO user : users) { %>
-    <tr>
-      <td><%= user.getUserId() %></td>
-      <td><%= user.getLoginId() %></td>
-      <td><%= user.getName() %></td>
-      <td><%= user.getRole() %></td>
-      <td>
-        <%= user.getDepartmentName() != null ? user.getDepartmentName() : "-" %>
-      </td>
-      <td><%= user.getCreatedAt() %></td>
-
-      <%-- 사용자 정보 업데이트 part --%>
-      <td>
-        <form action="<%= request.getContextPath() %>/admin/users/update" method="post" onsubmit="return confirmUpdateUser(this);">
-          <input type="hidden" name="userId" value="<%= user.getUserId() %>">
-
-          <select name="role" class="role-select">
-            <% if (roles != null) { %>
-            <% for (String role : roles) { %>
-            <option value="<%= role %>"
-                    <%= role.equals(user.getRole()) ? "selected" : "" %>>
-              <%= role %>
-            </option>
-            <% } %>
-            <% } %>
-          </select>
-
-          <select name="departmentId" class="department-select">
-            <option value="">담당부서 없음</option>
-
-            <% if (departments != null) { %>
-            <% for (DepartmentDTO dept : departments) { %>
-            <option value="<%= dept.getDepartmentId() %>"
-                    <%= user.getDepartmentId() != null
-                            && user.getDepartmentId().equals(dept.getDepartmentId())
-                            ? "selected" : "" %>>
-              <%= dept.getName() %> (<%= dept.getType() %>)
-            </option>
-            <% } %>
-            <% } %>
-          </select>
-
-          <button type="submit">수정</button>
+            <div class="filter-actions">
+                <button type="submit">검색</button>
+                <a href="<%= request.getContextPath() %>/admin/users">초기화</a>
+            </div>
         </form>
-      </td>
-    </tr>
-    <% } %>
-    </tbody>
-  </table>
 
-  <%-- 페이지 part --%>
-  <div class="pagination">
-    <% if (currentPage > 1) { %>
-    <a href="<%= request.getContextPath() %>/admin/users?<%= queryString %>&page=<%= currentPage - 1 %>">
-      이전
-    </a>
-    <% } %>
+        <div class="list-header">
+            <div>
+                <h2>사용자 목록</h2>
+                <p>총 <%= totalCount %>명 · 현재 <%= currentPage %>페이지 / 총 <%= totalPages %>페이지</p>
+            </div>
+        </div>
 
-    <% for (int i = 1; i <= totalPages; i++) { %>
-    <% if (i == currentPage) { %>
-    <span class="current"><%= i %></span>
-    <% } else { %>
-    <a href="<%= request.getContextPath() %>/admin/users?<%= queryString %>&page=<%= i %>">
-      <%= i %>
-    </a>
-    <% } %>
-    <% } %>
+        <% if (users == null || users.isEmpty()) { %>
+        <div class="empty-message">조회된 사용자가 없습니다.</div>
+        <% } else { %>
 
-    <% if (currentPage < totalPages) { %>
-    <a href="<%= request.getContextPath() %>/admin/users?<%= queryString %>&page=<%= currentPage + 1 %>">
-      다음
-    </a>
-    <% } %>
-  </div>
+        <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>로그인 ID</th>
+                <th>이름</th>
+                <th>역할</th>
+                <th>담당부서</th>
+                <th>가입일</th>
+                <th>역할 / 담당부서 수정</th>
+            </tr>
+            </thead>
 
-  <% } %>
+            <tbody>
+            <% for (UserDTO user : users) { %>
+            <tr>
+                <td><%= user.getUserId() %></td>
+                <td><%= user.getLoginId() %></td>
+                <td><%= user.getName() %></td>
+                <td><%= roleText(user.getRole()) %></td>
+                <td><%= user.getDepartmentName() != null ? user.getDepartmentName() : "-" %></td>
+                <td><%= dateText(user.getCreatedAt()) %></td>
 
+                <td>
+                    <form class="inline-form"
+                          action="<%= request.getContextPath() %>/admin/users/update"
+                          method="post"
+                          onsubmit="return confirmUpdateUser(this);">
 
-  <%
+                        <input type="hidden" name="userId" value="<%= user.getUserId() %>">
+
+                        <select name="role" class="role-select">
+                            <% if (roles != null) { %>
+                            <% for (String role : roles) { %>
+                            <option value="<%= role %>"
+                                    <%= role.equals(user.getRole()) ? "selected" : "" %>>
+                                <%= roleText(role) %>
+                            </option>
+                            <% } %>
+                            <% } %>
+                        </select>
+
+                        <select name="departmentId" class="department-select">
+                            <option value="">담당부서 없음</option>
+                            <% if (departments != null) { %>
+                            <% for (DepartmentDTO dept : departments) { %>
+                            <option value="<%= dept.getDepartmentId() %>"
+                                    <%= user.getDepartmentId() != null
+                                            && user.getDepartmentId().equals(dept.getDepartmentId())
+                                            ? "selected" : "" %>>
+                                <%= dept.getName() %>
+                            </option>
+                            <% } %>
+                            <% } %>
+                        </select>
+
+                        <button type="submit" class="btn-edit">수정</button>
+                    </form>
+                </td>
+            </tr>
+            <% } %>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="pagination">
+            <% if (currentPage > 1) { %>
+            <a href="<%= request.getContextPath() %>/admin/users?<%= queryString %>&page=<%= currentPage - 1 %>">
+                이전
+            </a>
+            <% } %>
+
+            <% for (int i = 1; i <= totalPages; i++) { %>
+            <% if (i == currentPage) { %>
+            <strong><%= i %></strong>
+            <% } else { %>
+            <a href="<%= request.getContextPath() %>/admin/users?<%= queryString %>&page=<%= i %>">
+                <%= i %>
+            </a>
+            <% } %>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>
+            <a href="<%= request.getContextPath() %>/admin/users?<%= queryString %>&page=<%= currentPage + 1 %>">
+                다음
+            </a>
+            <% } %>
+        </div>
+
+        <% } %>
+
+    </section>
+</main>
+
+<%
     String result = request.getParameter("result");
-  %>
+%>
 
-  <script>
+<script>
+    document.querySelectorAll(".side-toggle").forEach(function (button) {
+        button.addEventListener("click", function () {
+            button.closest(".side-section").classList.toggle("collapsed");
+        });
+    });
+
     <% if ("success".equals(result)) { %>
       alert("사용자 정보가 수정되었습니다.");
       history.replaceState(null, "", "<%= request.getContextPath() %>/admin/users");
@@ -270,6 +424,20 @@
       alert("이미 동일한 역할과 담당부서입니다.");
       history.replaceState(null, "", "<%= request.getContextPath() %>/admin/users");
     <% } %>
+
+    function updateDepartmentFilter() {
+      const roleFilter = document.querySelector("select[name='role']");
+      const departmentFilter = document.getElementById("departmentFilter");
+
+      if (!roleFilter || !departmentFilter) return;
+
+      if (roleFilter.value === "STUDENT") {
+        departmentFilter.value = "";
+        departmentFilter.disabled = true;
+      } else {
+        departmentFilter.disabled = false;
+      }
+    }
 
     function confirmUpdateUser(form) {
       const userId = form.userId.value;
@@ -308,7 +476,14 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
+      const roleFilter = document.querySelector("select[name='role']");
       const rows = document.querySelectorAll("tbody tr");
+
+      updateDepartmentFilter();
+
+      if (roleFilter) {
+        roleFilter.addEventListener("change", updateDepartmentFilter);
+      }
 
       rows.forEach(function (row) {
         const roleSelect = row.querySelector(".role-select");
@@ -322,7 +497,7 @@
         }
       });
     });
-  </script>
+</script>
 
-  </body>
+</body>
 </html>
