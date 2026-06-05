@@ -18,6 +18,12 @@ public class DepartmentService {
         return departmentDAO.findAll();
     }
 
+    public DepartmentDTO findDepartmentById(Long departmentId) {
+        if (departmentId == null || departmentId <= 0) return null;
+
+        return departmentDAO.findById(departmentId);
+    }
+
     // ADMIN 부서 조회
     public List<DepartmentDTO> findAdminDepartments() {
         return departmentDAO.findAll().stream().filter(dept -> "ADMIN".equals(dept.getType())).toList();

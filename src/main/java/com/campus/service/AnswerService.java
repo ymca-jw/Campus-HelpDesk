@@ -8,6 +8,8 @@ import com.campus.dto.ComplaintDTO;
 import com.campus.dto.StatusHistoryDTO;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class AnswerService {
 
@@ -24,7 +26,7 @@ public class AnswerService {
         return complaintDAO.findByDepartmentId(departmentId);
     }
 
-    // 답변 등록 및 민원 상태 변경
+    // 답변 등록
     public void registerAnswer(AnswerDTO answerDTO) {
         if (answerDTO == null) return;
         if (answerDTO.getComplaintId() == null || answerDTO.getComplaintId() <= 0) return;
@@ -34,8 +36,6 @@ public class AnswerService {
         answerDTO.setContent(answerDTO.getContent().trim());
 
         answerDAO.insertAnswer(answerDTO);
-
-        changeComplaintStatus(answerDTO.getComplaintId(), "COMPLETED", answerDTO.getStaffId(), "답변 등록");
     }
 
     // 답변 조회
@@ -69,7 +69,7 @@ public class AnswerService {
     }
 
     // 상태 변경
-    public void updateComplaintStatus(Long complaintId, String status, Long changedBy) {
+    public void updateComplaintStatus(Long complaintId, String status, Long changedBy, String reason) {
         if (complaintId == null || complaintId <= 0) return;
         if (status == null || status.isBlank()) return;
         if (changedBy == null || changedBy <= 0) return;
@@ -82,7 +82,11 @@ public class AnswerService {
             return;
         }
 
-        changeComplaintStatus(complaintId, status, changedBy, "담당자 상태 변경");
+        String historyReason = reason == null || reason.isBlank()
+                ? "담당자 상태 변경"
+                : reason.trim();
+
+        changeComplaintStatus(complaintId, status, changedBy, historyReason);
     }
 
     // 대시보드 상태별 개수
@@ -91,6 +95,36 @@ public class AnswerService {
         if (status == null || status.isBlank()) return 0;
 
         return complaintDAO.countByDepartmentAndStatus(departmentId, status);
+    }
+
+    public Map<String, Integer> countComplaintsByStatuses(Long departmentId) {
+        Map<String, Integer> statusCounts = new LinkedHashMap<>();
+        statusCounts.put("RECEIVED", countComplaintsByDepartmentAndStatus(departmentId, "RECEIVED"));
+        statusCounts.put("REVIEWING", countComplaintsByDepartmentAndStatus(departmentId, "REVIEWING"));
+        statusCounts.put("PROCESSING", countComplaintsByDepartmentAndStatus(departmentId, "PROCESSING"));
+        statusCounts.put("COMPLETED", countComplaintsByDepartmentAndStatus(departmentId, "COMPLETED"));
+        statusCounts.put("REJECTED", countComplaintsByDepartmentAndStatus(departmentId, "REJECTED"));
+
+        return statusCounts;
+    }
+
+    public List<ComplaintDTO> findRecentComplaintsByDepartment(Long departmentId, int limit) {
+        if (limit <= 0) return List.of();
+
+        return findComplaintsByDepartment(departmentId).stream()
+                .limit(limit)
+                .toList();
+    }
+
+    public List<ComplaintDTO> findPendingComplaintsByDepartment(Long departmentId, int limit) {
+        if (limit <= 0) return List.of();
+
+        return findComplaintsByDepartment(departmentId).stream()
+                .filter(complaint -> "RECEIVED".equals(complaint.getStatus())
+                        || "REVIEWING".equals(complaint.getStatus())
+                        || "PROCESSING".equals(complaint.getStatus()))
+                .limit(limit)
+                .toList();
     }
 
     // 민원 상세 (담당자)
