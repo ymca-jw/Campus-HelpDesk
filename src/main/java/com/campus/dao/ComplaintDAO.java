@@ -53,16 +53,10 @@ public class ComplaintDAO {
         return complaints;
     }
 
-    // 민원 목록 조회 - 필터/검색/페이징
-    public List<ComplaintDTO> findComplaints(String departmentType,
-                                             Long departmentId,
-                                             String category,
-                                             String status,
-                                             String searchType,
-                                             String keyword,
-                                             String likeSort,
-                                             int page,
-                                             int pageSize) {
+    // 민원 목록 조회 필터, 검색, 페이징
+    public List<ComplaintDTO> findComplaints(String departmentType, Long departmentId, String category, String status,
+                                             String searchType, String keyword, String likeSort, int page, int pageSize) {
+
         List<ComplaintDTO> complaints = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder("""
@@ -103,7 +97,10 @@ public class ComplaintDAO {
             params.add(category);
         }
 
-        if (status != null && !status.isBlank()) {
+        if ("PENDING".equals(status)) {
+            sql.append(" AND c.status IN ('RECEIVED', 'REVIEWING', 'PROCESSING') ");
+        }
+        else if (status != null && !status.isBlank()) {
             sql.append(" AND c.status = ? ");
             params.add(status);
         }
@@ -152,13 +149,9 @@ public class ComplaintDAO {
         return complaints;
     }
 
-    public List<ComplaintDTO> findTopLikedComplaints(String departmentType,
-                                                     Long departmentId,
-                                                     String category,
-                                                     String status,
-                                                     String searchType,
-                                                     String keyword,
-                                                     int limit) {
+    public List<ComplaintDTO> findTopLikedComplaints(String departmentType, Long departmentId, String category,
+                                                     String status, String searchType, String keyword, int limit) {
+
         List<ComplaintDTO> complaints = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder("""
@@ -199,7 +192,9 @@ public class ComplaintDAO {
             params.add(category);
         }
 
-        if (status != null && !status.isBlank()) {
+        if ("PENDING".equals(status)) {
+            sql.append(" AND c.status IN ('RECEIVED', 'REVIEWING', 'PROCESSING') ");
+        } else if (status != null && !status.isBlank()) {
             sql.append(" AND c.status = ? ");
             params.add(status);
         }
@@ -239,12 +234,9 @@ public class ComplaintDAO {
     }
 
     // 민원 목록 개수 조회 - 필터/검색
-    public int countComplaints(String departmentType,
-                               Long departmentId,
-                               String category,
-                               String status,
-                               String searchType,
-                               String keyword) {
+    public int countComplaints(String departmentType, Long departmentId, String category, String status,
+                               String searchType, String keyword) {
+
         StringBuilder sql = new StringBuilder("""
             SELECT COUNT(*) AS total_count
             FROM complaints c
@@ -270,7 +262,9 @@ public class ComplaintDAO {
             params.add(category);
         }
 
-        if (status != null && !status.isBlank()) {
+        if ("PENDING".equals(status)) {
+            sql.append(" AND c.status IN ('RECEIVED', 'REVIEWING', 'PROCESSING') ");
+        } else if (status != null && !status.isBlank()) {
             sql.append(" AND c.status = ? ");
             params.add(status);
         }
