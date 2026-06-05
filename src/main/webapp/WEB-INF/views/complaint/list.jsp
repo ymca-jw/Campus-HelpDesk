@@ -56,33 +56,11 @@
             padding: 0 40px;
         }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 58px;
-        }
-
         .brand img {
             display: block;
             width: 180px;
             max-height: 52px;
             object-fit: contain;
-        }
-
-        .main-nav {
-            display: flex;
-            align-items: center;
-            gap: 36px;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .main-nav a {
-            padding: 30px 0;
-        }
-
-        .main-nav a.active {
-            color: #007a4d;
         }
 
         .auth-nav {
@@ -97,6 +75,82 @@
             max-width: 1280px;
             margin: 0 auto;
             padding: 54px 40px 80px;
+        }
+
+        .page-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 36px;
+        }
+
+        .complaint-sidebar {
+            flex: 0 0 240px;
+        }
+
+        .page-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .side-section {
+            margin-bottom: 18px;
+        }
+
+        .side-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border: 0;
+            border-bottom: 1px solid #e5e7eb;
+            background: transparent;
+            cursor: pointer;
+            color: #111827;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 14px 10px;
+            text-align: left;
+        }
+
+        .side-toggle::after {
+            content: "⌄";
+            color: #6b7280;
+            font-size: 18px;
+            transition: transform 0.2s ease;
+        }
+
+        .side-section.collapsed .side-toggle::after {
+            transform: rotate(-90deg);
+        }
+
+        .side-links {
+            overflow: hidden;
+            max-height: 180px;
+            padding: 12px 0 8px 16px;
+            border-left: 1px solid #d1d5db;
+            margin-left: 10px;
+            transition: max-height 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease;
+        }
+
+        .side-section.collapsed .side-links {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+
+        .side-links a {
+            display: block;
+            padding: 10px 12px;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .side-links a.active {
+            color: #007a5a;
+            font-weight: 700;
+            border-left: 2px solid #007a5a;
+            margin-left: -17px;
+            padding-left: 27px;
         }
 
         .page-title {
@@ -406,14 +460,13 @@
                 padding-bottom: 16px;
             }
 
-            .header-left {
-                flex-wrap: wrap;
-                gap: 20px;
+            .page-layout {
+                flex-direction: column;
             }
 
-            .main-nav {
-                gap: 18px;
-                font-size: 16px;
+            .complaint-sidebar {
+                width: 100%;
+                flex-basis: auto;
             }
 
             .filter-panel,
@@ -447,16 +500,9 @@
 
 <header class="site-header">
     <div class="header-inner">
-        <div class="header-left">
-            <a class="brand" href="${pageContext.request.contextPath}/complaints">
-                <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
-            </a>
-
-            <nav class="main-nav">
-                <a class="active" href="${pageContext.request.contextPath}/complaints">민원 목록</a>
-                <a href="${pageContext.request.contextPath}/complaints/new">민원 작성</a>
-            </nav>
-        </div>
+        <a class="brand" href="${pageContext.request.contextPath}/complaints">
+            <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
+        </a>
 
         <div class="auth-nav">
             <a href="#">로그인</a>
@@ -466,7 +512,37 @@
     </div>
 </header>
 
-<main class="page">
+<main class="page page-layout">
+    <aside class="complaint-sidebar">
+        <div class="side-section">
+            <button type="button" class="side-toggle">민원 메뉴</button>
+            <div class="side-links">
+                <a class="${empty status ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints">민원 목록</a>
+                <a href="${pageContext.request.contextPath}/complaints/new">민원 작성</a>
+            </div>
+        </div>
+
+        <div class="side-section">
+            <button type="button" class="side-toggle">내 민원</button>
+            <div class="side-links">
+                <a href="#">내가 작성한 민원</a>
+                <a href="#">내가 추천한 민원</a>
+            </div>
+        </div>
+
+        <div class="side-section">
+            <button type="button" class="side-toggle">민원 상태</button>
+            <div class="side-links">
+                <a class="${status == 'RECEIVED' ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints?status=RECEIVED">접수</a>
+                <a class="${status == 'REVIEWING' ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints?status=REVIEWING">검토중</a>
+                <a class="${status == 'PROCESSING' ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints?status=PROCESSING">처리중</a>
+                <a class="${status == 'COMPLETED' ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints?status=COMPLETED">완료</a>
+                <a class="${status == 'REJECTED' ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints?status=REJECTED">반려</a>
+            </div>
+        </div>
+    </aside>
+
+    <div class="page-content">
     <section class="page-title">
         <h1>민원 목록</h1>
         <p>학교 생활 중 발생한 민원을 확인하고 처리 현황을 살펴볼 수 있습니다.</p>
@@ -684,9 +760,16 @@
             </div>
         </div>
     </section>
+    </div>
 </main>
 
 <script>
+    document.querySelectorAll(".side-toggle").forEach(function (button) {
+        button.addEventListener("click", function () {
+            button.closest(".side-section").classList.toggle("collapsed");
+        });
+    });
+
     document.addEventListener("click", async function (event) {
         const link = event.target.closest("[data-ajax-list='true']");
         if (!link) {
