@@ -42,15 +42,23 @@ public class AdminService {
     }
 
     // 사용자 목록 조회 + 검색 + 페이징
-    public List<UserDTO> findUsers(String role, String searchType, String keyword, int page, int pageSize) {
+    public List<UserDTO> findUsers(String role, Long departmentId, String searchType, String keyword, int page, int pageSize) {
         if (page < 1) page = 1;
 
-        return adminDAO.adminFindUsers(role, searchType, keyword, page, pageSize);
+        if ("STUDENT".equals(role)) {
+            departmentId = null;
+        }
+
+        return adminDAO.adminFindUsers(role, departmentId, searchType, keyword, page, pageSize);
     }
 
     // 사용자 검색 결과 전체 개수
-    public int countUsers(String role, String searchType, String keyword) {
-        return adminDAO.adminCountUsers(role, searchType, keyword);
+    public int countUsers(String role, Long departmentId, String searchType, String keyword) {
+        if ("STUDENT".equals(role)) {
+            departmentId = null;
+        }
+
+        return adminDAO.adminCountUsers(role, departmentId, searchType, keyword);
     }
 
     // 사용자 정보 업데이트

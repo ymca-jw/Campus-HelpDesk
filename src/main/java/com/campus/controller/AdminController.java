@@ -118,6 +118,25 @@ public class AdminController extends HttpServlet {
         String role = req.getParameter("role");
         String searchType = req.getParameter("searchType");
         String keyword = req.getParameter("keyword");
+        String departmentIdParam = req.getParameter("departmentId");
+        Long departmentId = null;
+
+        if (role == null) role = "";
+        if (searchType == null || searchType.isBlank()) searchType = "loginId";
+        if (keyword == null) keyword = "";
+
+        if (departmentIdParam != null && !departmentIdParam.isBlank()) {
+            try {
+                departmentId = Long.parseLong(departmentIdParam);
+            }
+            catch (NumberFormatException e) {
+                departmentId = null;
+            }
+        }
+
+        if ("STUDENT".equals(role)) {
+            departmentId = null;
+        }
 
         int page = 1;       // 페이지
         int pageSize = 20;  // 페이지 안에 들어갈 개수
@@ -136,12 +155,12 @@ public class AdminController extends HttpServlet {
             page = 1;
         }
 
-        int totalCount = adminService.countUsers(role, searchType, keyword);
+        int totalCount = adminService.countUsers(role, departmentId, searchType, keyword);
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
         if (totalPages == 0) totalPages = 1;
         if (page > totalPages) page = totalPages;
 
-        List<UserDTO> users = adminService.findUsers(role, searchType, keyword, page, pageSize);
+        List<UserDTO> users = adminService.findUsers(role, departmentId, searchType, keyword, page, pageSize);
         List<DepartmentDTO> departments = departmentService.findAllDepartments();
         List<String> roles = List.of("STUDENT", "STAFF");   // 웹 상에서 ADMIN으로 역할 변경 불가
 
@@ -150,6 +169,7 @@ public class AdminController extends HttpServlet {
         req.setAttribute("roles", roles);
 
         req.setAttribute("selectedRole", role);
+        req.setAttribute("selectedDepartmentId", departmentId);
         req.setAttribute("searchType", searchType);
         req.setAttribute("keyword", keyword);
 

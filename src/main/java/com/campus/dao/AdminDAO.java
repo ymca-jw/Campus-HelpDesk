@@ -119,10 +119,11 @@ public class AdminDAO {
 
 
     // 사용자 목록 조회 + 역할 필터 + 검색 + 페이징 (관리자)
-    public List<UserDTO> adminFindUsers(String role, String searchType, String keyword, int page, int pageSize) {
+    public List<UserDTO> adminFindUsers(String role, Long departmentId, String searchType, String keyword, int page, int pageSize) {
         List<UserDTO> users = new ArrayList<>();
 
         boolean hasRole = role != null && !role.isBlank();
+        boolean hasDepartment = departmentId != null && departmentId > 0;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
         int offset = (page - 1) * pageSize;
@@ -145,6 +146,10 @@ public class AdminDAO {
             sql.append(" AND u.role = ? ");
         }
 
+        if (hasDepartment) {
+            sql.append(" AND u.department_id = ? ");
+        }
+
         if (hasKeyword) {
             if ("name".equals(searchType)) {
                 sql.append(" AND u.name LIKE ? ");
@@ -163,6 +168,7 @@ public class AdminDAO {
             int index = 1;
 
             if (hasRole) pstmt.setString(index++, role);
+            if (hasDepartment) pstmt.setLong(index++, departmentId);
             if (hasKeyword) pstmt.setString(index++, "%" + keyword.trim() + "%");
 
             pstmt.setInt(index++, pageSize);
@@ -177,12 +183,12 @@ public class AdminDAO {
                     user.setName(rs.getString("name"));
                     user.setRole(rs.getString("role"));
 
-                    long departmentId = rs.getLong("department_id");
+                    long userDepartmentId = rs.getLong("department_id");
                     if (rs.wasNull()) {
                         user.setDepartmentId(null);
                     }
                     else {
-                        user.setDepartmentId(departmentId);
+                        user.setDepartmentId(userDepartmentId);
                     }
 
                     user.setDepartmentName(rs.getString("department_name"));
@@ -201,8 +207,9 @@ public class AdminDAO {
     }
 
     // 사용자 검색 결과 전체 개수 조회
-    public int adminCountUsers(String role, String searchType, String keyword) {
+    public int adminCountUsers(String role, Long departmentId, String searchType, String keyword) {
         boolean hasRole = role != null && !role.isBlank();
+        boolean hasDepartment = departmentId != null && departmentId > 0;
         boolean hasKeyword = keyword != null && !keyword.isBlank();
 
         StringBuilder sql = new StringBuilder("""
@@ -214,6 +221,10 @@ public class AdminDAO {
 
         if (hasRole) {
             sql.append(" AND u.role = ? ");
+        }
+
+        if (hasDepartment) {
+            sql.append(" AND u.department_id = ? ");
         }
 
         if (hasKeyword) {
@@ -233,6 +244,10 @@ public class AdminDAO {
 
             if (hasRole) {
                 pstmt.setString(index++, role);
+            }
+
+            if (hasDepartment) {
+                pstmt.setLong(index++, departmentId);
             }
 
             if (hasKeyword) {
