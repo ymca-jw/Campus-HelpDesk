@@ -13,6 +13,11 @@
         if ("REJECTED".equals(status)) return "반려";
         return status;
     }
+
+    private String dateText(java.util.Date date) {
+        if (date == null) return "";
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+    }
 %>
 
 <%
@@ -168,6 +173,15 @@
             letter-spacing: 0;
         }
 
+        .detail-title-area {
+            min-width: 0;
+            max-width: calc(100% - 140px);
+        }
+
+        .detail-action-area {
+            flex: 0 0 auto;
+        }
+
         .post-meta {
             display: flex;
             flex-wrap: wrap;
@@ -204,6 +218,7 @@
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
+            white-space: nowrap;
         }
 
         .button.primary {
@@ -480,7 +495,7 @@
             <div class="empty-answer">민원 정보를 불러올 수 없습니다.</div>
         <% } else { %>
             <section class="detail-header">
-                <div>
+                <div class="detail-title-area">
                     <h1><%= complaint.getTitle() %></h1>
                     <p class="post-meta">
                         <strong><%= complaint.getWriterName() %></strong>
@@ -489,11 +504,11 @@
                         <span>·</span>
                         <span><%= complaint.getCategory() %></span>
                         <span>·</span>
-                        <span><%= complaint.getCreatedAt() %></span>
+                        <span><%= dateText(complaint.getCreatedAt()) %></span>
                         <span class="status-pill" id="currentStatusText"><%= statusText(complaint.getStatus()) %></span>
                     </p>
                 </div>
-                <div>
+                <div class="detail-action-area">
                     <button type="button" class="button secondary" id="timelineButton">타임라인</button>
                 </div>
             </section>
@@ -514,7 +529,7 @@
                     </form>
                 <% } else { %>
                     <p class="answer-meta">
-                        답변 담당자 <strong><%= answer.getStaffName() %></strong> · 작성일 <%= answer.getCreatedAt() %>
+                        답변 담당자 <strong><%= answer.getStaffName() %></strong> · 작성일 <%= dateText(answer.getCreatedAt()) %>
                     </p>
 
                     <form id="answerUpdateForm" action="<%= request.getContextPath() %>/staff/answer/update" method="post">
@@ -579,7 +594,7 @@
                         <div class="timeline-item">
                             <strong><%= prevStatusText %> → <%= newStatusText %></strong>
                             <p>변경자: <%= history.getChangedByName() %></p>
-                            <p>변경일: <%= history.getCreatedAt() %></p>
+                            <p>변경일: <%= dateText(history.getCreatedAt()) %></p>
                             <% if (history.getReason() != null && !history.getReason().isBlank()) { %>
                                 <p>사유: <%= history.getReason() %></p>
                             <% } %>

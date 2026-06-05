@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ taglib uri="jakarta.tags.fmt" prefix="fmt" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -461,7 +462,7 @@
                 <span class="badge">${complaint.category}</span>
                 <span>${complaint.departmentName}</span>
                 <span>·</span>
-                <span>${complaint.createdAt}</span>
+                <span><fmt:formatDate value="${complaint.createdAt}" pattern="yyyy-MM-dd HH:mm:ss" /></span>
               </div>
             </div>
             <div class="status-badge">
