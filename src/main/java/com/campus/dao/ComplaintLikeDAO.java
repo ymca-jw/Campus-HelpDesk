@@ -87,6 +87,59 @@ public class ComplaintLikeDAO {
         }
     }
 
+    // 1: success, 0: fail
+    public int deleteLikeAndDecreaseCount(Long complaintId, Long userId) {
+        String deleteSql = """
+            DELETE FROM complaint_likes
+            WHERE complaint_id = ?
+              AND user_id = ?
+            """;
+
+        String updateSql = """
+            UPDATE complaints
+            SET like_count = CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END
+            WHERE complaint_id = ?
+            """;
+
+        Connection conn = null;
+
+        try {
+            conn = DBUtil.getConnection();
+            conn.setAutoCommit(false);
+
+            int deletedRows;
+            try (PreparedStatement pstmt = conn.prepareStatement(deleteSql)) {
+                pstmt.setLong(1, complaintId);
+                pstmt.setLong(2, userId);
+                deletedRows = pstmt.executeUpdate();
+            }
+
+            if (deletedRows != 1) {
+                conn.rollback();
+                return 0;
+            }
+
+            int updatedRows;
+            try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
+                pstmt.setLong(1, complaintId);
+                updatedRows = pstmt.executeUpdate();
+            }
+
+            if (updatedRows != 1) {
+                conn.rollback();
+                return 0;
+            }
+
+            conn.commit();
+            return 1;
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new RuntimeException("Complaint like delete failed.", e);
+        } finally {
+            close(conn);
+        }
+    }
+
     private void rollback(Connection conn) {
         if (conn == null) {
             return;
