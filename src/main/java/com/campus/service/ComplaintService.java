@@ -106,6 +106,23 @@ public class ComplaintService {
         return complaintLikeDAO.insertLikeAndIncreaseCount(complaintId, userId);
     }
 
+    // 1: liked, 2: unliked, 0: fail
+    public int toggleLikeComplaint(Long complaintId, Long userId) {
+        if (complaintId == null || complaintId <= 0) {
+            return 0;
+        }
+
+        if (userId == null || userId <= 0) {
+            return 0;
+        }
+
+        if (complaintLikeDAO.existsByComplaintIdAndUserId(complaintId, userId)) {
+            return complaintLikeDAO.deleteLikeAndDecreaseCount(complaintId, userId) == 1 ? 2 : 0;
+        }
+
+        return complaintLikeDAO.insertLikeAndIncreaseCount(complaintId, userId) == 1 ? 1 : 0;
+    }
+
     public boolean isLikedByUser(Long complaintId, Long userId) {
         if (complaintId == null || complaintId <= 0) {
             return false;
