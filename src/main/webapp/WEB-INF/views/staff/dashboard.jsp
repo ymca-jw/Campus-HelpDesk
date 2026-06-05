@@ -8,6 +8,10 @@
   <title>담당자 대시보드</title>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     html {
       scroll-behavior: smooth;
     }

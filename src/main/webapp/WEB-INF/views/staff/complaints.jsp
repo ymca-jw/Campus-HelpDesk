@@ -5,9 +5,13 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8">
-    <title>담당자 - 담당 부서 민원 목록</title>
+    <title>담당 부서 민원 목록</title>
 
     <style>
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         color: #111827;
