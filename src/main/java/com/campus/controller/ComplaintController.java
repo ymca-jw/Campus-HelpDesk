@@ -162,7 +162,7 @@ public class ComplaintController extends HttpServlet {
             page = 1;
         }
 
-        int pageSize = 20;
+        int pageSize = 15;
 
         int totalCount = complaintService.countComplaintList(
                 departmentType,
@@ -410,18 +410,22 @@ public class ComplaintController extends HttpServlet {
 
         int result;
         try {
-            result = complaintService.likeComplaint(complaintId, userId);
+            result = complaintService.toggleLikeComplaint(complaintId, userId);
         } catch (RuntimeException e) {
             result = 0;
         }
 
         String likeResult;
+        boolean liked;
         if (result == 1) {
             likeResult = "success";
+            liked = true;
         } else if (result == 2) {
-            likeResult = "duplicate";
+            likeResult = "cancel";
+            liked = false;
         } else {
             likeResult = "fail";
+            liked = complaintService.isLikedByUser(complaintId, userId);
         }
 
         ComplaintDTO complaint = complaintService.findComplaintDetail(complaintId);
@@ -429,7 +433,8 @@ public class ComplaintController extends HttpServlet {
 
         if (isAjaxRequest(req)) {
             res.setContentType("application/json; charset=UTF-8");
-            res.getWriter().write("{\"result\":\"" + likeResult + "\",\"likeCount\":" + likeCount + "}");
+            res.getWriter().write("{\"result\":\"" + likeResult + "\",\"liked\":" + liked
+                    + ",\"likeCount\":" + likeCount + "}");
             return;
         }
 

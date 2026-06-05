@@ -163,7 +163,7 @@ public class AnswerController extends HttpServlet {
             page = 1;
         }
 
-        int pageSize = 20;
+        int pageSize = 15;
         int totalCount = complaintService.countComplaintList(
                 departmentType,
                 staffDepartmentId,
