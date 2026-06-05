@@ -517,7 +517,7 @@
 
                 <div class="modal-actions">
                     <button class="button secondary" type="button" onclick="hideSimilarBox()">이전</button>
-                    <button class="button primary" type="button" onclick="submitFinal()">그래도 제출</button>
+                    <button class="button primary" type="button" onclick="submitFinal()">제출</button>
                 </div>
             </div>
         </c:if>
