@@ -6,6 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <title>민원 작성</title>
+    <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/leaf_logo.svg">
     <style>
         * {
             box-sizing: border-box;

@@ -24,6 +24,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FAQ / 유사민원 추천 테스트</title>
+    <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/leaf_logo.svg">
 </head>
 <body>
 

@@ -7,6 +7,7 @@
   <head>
     <meta charset="UTF-8">
     <title>담당 부서 민원 목록</title>
+    <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/leaf_logo.svg">
 
     <style>
       * {
