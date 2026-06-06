@@ -1,10 +1,12 @@
 DROP TABLE IF EXISTS status_history;
 DROP TABLE IF EXISTS complaint_likes;
+DROP TABLE IF EXISTS complaint_attachments;
 DROP TABLE IF EXISTS answers;
 DROP TABLE IF EXISTS faq;
 DROP TABLE IF EXISTS complaints;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS departments;
+
 
 CREATE TABLE departments (
                              department_id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -88,6 +90,22 @@ CREATE TABLE answers (
                                  REFERENCES users(user_id)
                                  ON DELETE CASCADE
                                  ON UPDATE CASCADE
+);
+
+CREATE TABLE complaint_attachments (
+                                       attachment_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                       complaint_id BIGINT NOT NULL,
+                                       original_name VARCHAR(255) NOT NULL COMMENT '원본 파일명',
+                                       stored_name VARCHAR(255) NOT NULL COMMENT '서버 저장 파일명 (UUID)',
+                                       file_size BIGINT NOT NULL DEFAULT 0,
+                                       content_type VARCHAR(100) NULL,
+                                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                                       CONSTRAINT fk_attachments_complaint
+                                           FOREIGN KEY (complaint_id)
+                                               REFERENCES complaints(complaint_id)
+                                               ON DELETE CASCADE
+                                               ON UPDATE CASCADE
 );
 
 CREATE TABLE complaint_likes (
@@ -184,6 +202,9 @@ CREATE INDEX idx_complaints_created_at
 
 CREATE INDEX idx_answers_complaint_id
     ON answers(complaint_id);
+
+CREATE INDEX idx_attachments_complaint_id
+    ON complaint_attachments(complaint_id);
 
 CREATE INDEX idx_complaint_likes_user_id
     ON complaint_likes(user_id);
