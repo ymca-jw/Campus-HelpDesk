@@ -1,8 +1,9 @@
 package com.campus.dao;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+
+import com.campus.dto.ComplaintDTO;
+import com.campus.dto.FaqDTO;
+import com.campus.util.DBUtil;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +57,254 @@ public class ComplaintDAO {
         return complaints;
     }
 
+    // 민원 목록 조회 필터, 검색, 페이징
+    public List<ComplaintDTO> findComplaints(String departmentType, Long departmentId, String category, String status,
+                                             String searchType, String keyword, String likeSort, int page, int pageSize) {
+
+        List<ComplaintDTO> complaints = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT c.complaint_id,
+                   c.writer_id,
+                   c.department_id,
+                   d.name AS department_name,
+                   u.name AS writer_name,
+                   c.category,
+                   c.title,
+                   c.content,
+                   c.status,
+                   c.like_count,
+                   c.is_private,
+                   c.created_at,
+                   c.updated_at,
+                   c.completed_at
+            FROM complaints c
+            JOIN departments d ON c.department_id = d.department_id
+            JOIN users u ON c.writer_id = u.user_id
+            WHERE 1 = 1
+            """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (departmentType != null && !departmentType.isBlank()) {
+            sql.append(" AND d.type = ? ");
+            params.add(departmentType);
+        }
+
+        if (departmentId != null && departmentId > 0) {
+            sql.append(" AND c.department_id = ? ");
+            params.add(departmentId);
+        }
+
+        if (category != null && !category.isBlank()) {
+            sql.append(" AND c.category = ? ");
+            params.add(category);
+        }
+
+        if ("PENDING".equals(status)) {
+            sql.append(" AND c.status IN ('RECEIVED', 'REVIEWING', 'PROCESSING') ");
+        }
+        else if (status != null && !status.isBlank()) {
+            sql.append(" AND c.status = ? ");
+            params.add(status);
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            if ("title".equals(searchType)) {
+                sql.append(" AND c.title LIKE ? ");
+                params.add("%" + keyword.trim() + "%");
+            } else if ("content".equals(searchType)) {
+                sql.append(" AND c.content LIKE ? ");
+                params.add("%" + keyword.trim() + "%");
+            }
+        }
+
+        if ("asc".equals(likeSort)) {
+            sql.append(" ORDER BY c.like_count ASC, c.created_at DESC ");
+        } else if ("desc".equals(likeSort)) {
+            sql.append(" ORDER BY c.like_count DESC, c.created_at DESC ");
+        } else {
+            sql.append(" ORDER BY c.created_at DESC ");
+        }
+        sql.append(" LIMIT ? OFFSET ? ");
+
+        int offset = (page - 1) * pageSize;
+        params.add(pageSize);
+        params.add(offset);
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql.toString())
+        ) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    complaints.add(mapRow(rs));
+                }
+            }
+        }
+        catch (SQLException e) {
+            throw new RuntimeException("민원 목록 검색 중 오류가 발생했습니다.", e);
+        }
+
+        return complaints;
+    }
+
+    public List<ComplaintDTO> findTopLikedComplaints(String departmentType, Long departmentId, String category,
+                                                     String status, String searchType, String keyword, int limit) {
+
+        List<ComplaintDTO> complaints = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT c.complaint_id,
+                   c.writer_id,
+                   c.department_id,
+                   d.name AS department_name,
+                   u.name AS writer_name,
+                   c.category,
+                   c.title,
+                   c.content,
+                   c.status,
+                   c.like_count,
+                   c.is_private,
+                   c.created_at,
+                   c.updated_at,
+                   c.completed_at
+            FROM complaints c
+            JOIN departments d ON c.department_id = d.department_id
+            JOIN users u ON c.writer_id = u.user_id
+            WHERE 1 = 1
+            """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (departmentType != null && !departmentType.isBlank()) {
+            sql.append(" AND d.type = ? ");
+            params.add(departmentType);
+        }
+
+        if (departmentId != null && departmentId > 0) {
+            sql.append(" AND c.department_id = ? ");
+            params.add(departmentId);
+        }
+
+        if (category != null && !category.isBlank()) {
+            sql.append(" AND c.category = ? ");
+            params.add(category);
+        }
+
+        if ("PENDING".equals(status)) {
+            sql.append(" AND c.status IN ('RECEIVED', 'REVIEWING', 'PROCESSING') ");
+        } else if (status != null && !status.isBlank()) {
+            sql.append(" AND c.status = ? ");
+            params.add(status);
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            if ("title".equals(searchType)) {
+                sql.append(" AND c.title LIKE ? ");
+                params.add("%" + keyword.trim() + "%");
+            } else if ("content".equals(searchType)) {
+                sql.append(" AND c.content LIKE ? ");
+                params.add("%" + keyword.trim() + "%");
+            }
+        }
+
+        sql.append(" ORDER BY c.like_count DESC, c.created_at DESC ");
+        sql.append(" LIMIT ? ");
+        params.add(limit);
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql.toString())
+        ) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    complaints.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Top liked complaints query failed.", e);
+        }
+
+        return complaints;
+    }
+
+    // 민원 목록 개수 조회 - 필터/검색
+    public int countComplaints(String departmentType, Long departmentId, String category, String status,
+                               String searchType, String keyword) {
+
+        StringBuilder sql = new StringBuilder("""
+            SELECT COUNT(*) AS total_count
+            FROM complaints c
+            JOIN departments d ON c.department_id = d.department_id
+            JOIN users u ON c.writer_id = u.user_id
+            WHERE 1 = 1
+            """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (departmentType != null && !departmentType.isBlank()) {
+            sql.append(" AND d.type = ? ");
+            params.add(departmentType);
+        }
+
+        if (departmentId != null && departmentId > 0) {
+            sql.append(" AND c.department_id = ? ");
+            params.add(departmentId);
+        }
+
+        if (category != null && !category.isBlank()) {
+            sql.append(" AND c.category = ? ");
+            params.add(category);
+        }
+
+        if ("PENDING".equals(status)) {
+            sql.append(" AND c.status IN ('RECEIVED', 'REVIEWING', 'PROCESSING') ");
+        } else if (status != null && !status.isBlank()) {
+            sql.append(" AND c.status = ? ");
+            params.add(status);
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            if ("title".equals(searchType)) {
+                sql.append(" AND c.title LIKE ? ");
+                params.add("%" + keyword.trim() + "%");
+            } else if ("content".equals(searchType)) {
+                sql.append(" AND c.content LIKE ? ");
+                params.add("%" + keyword.trim() + "%");
+            }
+        }
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql.toString())
+        ) {
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total_count");
+                }
+            }
+        }
+        catch (SQLException e) {
+            throw new RuntimeException("민원 목록 개수 조회 중 오류가 발생했습니다.", e);
+        }
+
+        return 0;
+    }
+
+
 
     // 민원 상세 조회
     public ComplaintDTO findById(Long complaintsId) {
@@ -102,6 +351,91 @@ public class ComplaintDAO {
     }
 
 
+    // 유사민원 조회
+    public List<ComplaintDTO> findSimilarComplaints(String searchText, String category, Long departmentId) {
+        List<ComplaintDTO> complaints = new ArrayList<>();
+
+        String sql = """
+                SELECT
+                    c.complaint_id,
+                    c.writer_id,
+                    c.department_id,
+                    d.name AS department_name,
+                    c.category,
+                    c.title,
+                    c.content,
+                    c.status,
+                    c.like_count,
+                    c.is_private,
+                    c.created_at,
+                    c.updated_at,
+                    c.completed_at,
+                
+                    MATCH(c.title, c.content) AGAINST (?) AS text_score,
+                
+                    (
+                        MATCH(c.title, c.content) AGAINST (?)
+                        + CASE WHEN c.department_id = ? THEN 3 ELSE 0 END
+                        + CASE WHEN c.category = ? THEN 3 ELSE 0 END
+                        + CASE WHEN c.status = 'COMPLETED' THEN 1 ELSE 0 END
+                        + CASE
+                            WHEN c.like_count >= 10 THEN 2
+                            WHEN c.like_count >= 5 THEN 1
+                            ELSE 0
+                          END
+                    ) AS final_score
+                
+                FROM complaints c
+                LEFT JOIN departments d ON c.department_id = d.department_id
+                
+                WHERE MATCH(c.title, c.content) AGAINST (?)
+                  AND c.is_private = 0
+                
+                ORDER BY final_score DESC, c.created_at DESC
+                LIMIT 3
+                """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+        ) {
+            // 위 쿼리에서 (?) 자리에 들어갈 값
+            pstmt.setString(1, searchText);
+            pstmt.setString(2, searchText);
+            pstmt.setLong(3, departmentId);
+            pstmt.setString(4, category);
+            pstmt.setString(5, searchText);
+
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    ComplaintDTO complaint = new ComplaintDTO();
+
+                    complaint.setComplaintId(rs.getLong("complaint_id"));
+                    complaint.setWriterId(rs.getLong("writer_id"));
+                    complaint.setDepartmentName(rs.getString("department_name"));
+                    complaint.setDepartmentId(rs.getLong("department_id"));
+                    complaint.setCategory(rs.getString("category"));
+                    complaint.setTitle(rs.getString("title"));
+                    complaint.setContent(rs.getString("content"));
+                    complaint.setStatus(rs.getString("status"));
+                    complaint.setLikeCount(rs.getInt("like_count"));
+                    complaint.setPrivateFlag(rs.getBoolean("is_private"));
+                    complaint.setCreatedAt(rs.getTimestamp("created_at"));
+                    complaint.setUpdatedAt(rs.getTimestamp("updated_at"));
+                    complaint.setCompletedAt(rs.getTimestamp("completed_at"));
+                    complaint.setFinalScore(rs.getDouble("final_score"));
+
+                    complaints.add(complaint);
+                }
+            }
+        }
+        catch (SQLException e) {
+            throw new RuntimeException("유사 민원 조회 중 DB 오류가 발생했습니다.", e);
+        }
+        return complaints;
+
+    }
+
     // rs 한 줄을 ComplaintDTO 하나로 변환
     private ComplaintDTO mapRow(ResultSet rs) throws SQLException {
         ComplaintDTO complaint = new ComplaintDTO();
@@ -123,16 +457,18 @@ public class ComplaintDAO {
 
         return complaint;
     }
- // 1. 민원 등록 (Insert)
+    // 1. 민원 등록 (Insert)
     public void insertComplaint(ComplaintDTO complaint) {
         String sql = """
-                INSERT INTO complaints 
-                (writer_id, department_id, category, title, content, status, is_private, attached_file) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+            INSERT INTO complaints
+            (writer_id, department_id, category, title, content, status, is_private)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setLong(1, complaint.getWriterId());
             pstmt.setLong(2, complaint.getDepartmentId());
             pstmt.setString(3, complaint.getCategory());
@@ -140,9 +476,8 @@ public class ComplaintDAO {
             pstmt.setString(5, complaint.getContent());
             pstmt.setString(6, complaint.getStatus());
             pstmt.setBoolean(7, complaint.isPrivateFlag());
-            //pstmt.setString(8, complaint.getAttachedFile()); //첨부파일
-
             pstmt.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("민원 등록 중 오류 발생", e);
         }
@@ -151,73 +486,155 @@ public class ComplaintDAO {
     // 2. 민원 수정 (Update)
     public void updateComplaint(ComplaintDTO complaint) {
         String sql = """
-                UPDATE complaints 
-                SET department_id=?, category=?, title=?, content=?, is_private=?, attached_file=?
-                WHERE complaint_id=?
-                """;
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+            UPDATE complaints
+            SET department_id = ?,
+                category = ?,
+                title = ?,
+                content = ?,
+                is_private = ?
+            WHERE complaint_id = ?
+                AND writer_id = ?
+                AND status = 'RECEIVED'
+            """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setLong(1, complaint.getDepartmentId());
             pstmt.setString(2, complaint.getCategory());
             pstmt.setString(3, complaint.getTitle());
             pstmt.setString(4, complaint.getContent());
             pstmt.setBoolean(5, complaint.isPrivateFlag());
-            //pstmt.setString(6, complaint.getAttachedFile());//첨부파일
             pstmt.setLong(6, complaint.getComplaintId());
+            pstmt.setLong(7, complaint.getWriterId());
 
             pstmt.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("민원 수정 중 오류 발생", e);
         }
     }
 
     // 3. 민원 삭제 (Delete)
-    public void deleteComplaint(Long complaintId) {
-        String sql = "DELETE FROM complaints WHERE complaint_id = ?";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    public void deleteComplaint(Long complaintId, Long writerId) {
+        String sql = """
+            DELETE FROM complaints
+            WHERE complaint_id = ?
+                AND writer_id = ?
+                AND status = 'RECEIVED'
+            """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setLong(1, complaintId);
+            pstmt.setLong(2, writerId);
+
             pstmt.executeUpdate();
+
         } catch (SQLException e) {
             throw new RuntimeException("민원 삭제 중 오류 발생", e);
         }
     }
-    // 4. 특정 부서의 민원만 조회 (담당자 대시보드용)
+    // 부서 조회 (담당자)
     public List<ComplaintDTO> findByDepartmentId(Long departmentId) {
         List<ComplaintDTO> complaints = new ArrayList<>();
-        String sql = """
-                SELECT c.complaint_id, c.writer_id, c.department_id, d.name AS department_name,
-                       u.name AS writer_name, c.category, c.title, c.content, c.status,
-                       c.like_count, c.is_private, c.created_at, c.updated_at, c.completed_at
-                FROM complaints c
-                JOIN departments d ON c.department_id = d.department_id
-                JOIN users u ON c.writer_id = u.user_id
-                WHERE c.department_id = ?
-                ORDER BY c.created_at DESC""";
 
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = """
+            SELECT
+                c.complaint_id,
+                c.writer_id,
+                c.department_id,
+                d.name AS department_name,
+                u.name AS writer_name,
+                c.category,
+                c.title,
+                c.content,
+                c.status,
+                c.like_count,
+                c.is_private,
+                c.created_at,
+                c.updated_at,
+                c.completed_at
+            FROM complaints c
+            JOIN departments d ON c.department_id = d.department_id
+            JOIN users u ON c.writer_id = u.user_id
+            WHERE c.department_id = ?
+            ORDER BY c.created_at DESC
+            """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setLong(1, departmentId);
+
             try (ResultSet rs = pstmt.executeQuery()) {
-                while(rs.next()) { complaints.add(mapRow(rs)); }
+                while (rs.next()) {
+                    complaints.add(mapRow(rs));
+                }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("부서별 민원 조회 중 오류 발생", e);
+
         }
+        catch (SQLException e) {
+            throw new RuntimeException("담당 부서 민원 목록 조회 중 오류가 발생했습니다.", e);
+        }
+
         return complaints;
     }
 
-    // 5. 민원 상태 변경 (답변 완료 시 사용)
+
+
+    // 상태 업데이트 (담당자)
     public void updateStatus(Long complaintId, String status) {
-        String sql = "UPDATE complaints SET status = ? WHERE complaint_id = ?";
-        try (Connection conn = DBUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        String sql = """
+            UPDATE complaints
+            SET status = ?
+            WHERE complaint_id = ?
+            """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
             pstmt.setString(1, status);
             pstmt.setLong(2, complaintId);
+
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("상태 업데이트 중 오류 발생", e);
+
         }
+        catch (SQLException e) {
+            throw new RuntimeException("민원 상태 변경 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    public int countByDepartmentAndStatus(Long departmentId, String status) {
+        String sql = """
+            SELECT COUNT(*) AS total_count
+            FROM complaints
+            WHERE department_id = ?
+              AND status = ?
+            """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmt.setLong(1, departmentId);
+            pstmt.setString(2, status);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("total_count");
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("담당 부서 상태별 민원 수 조회 중 오류가 발생했습니다.", e);
+        }
+
+        return 0;
     }
 }

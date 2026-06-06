@@ -68,7 +68,9 @@ CREATE TABLE complaints (
                                 FOREIGN KEY (department_id)
                                     REFERENCES departments(department_id)
                                     ON DELETE RESTRICT
-                                    ON UPDATE CASCADE
+                                    ON UPDATE CASCADE,
+
+                            FULLTEXT KEY ft_complaints_title_content (title, content)
 );
 
 CREATE TABLE answers (
@@ -125,7 +127,9 @@ CREATE TABLE faq (
                          FOREIGN KEY (department_id)
                              REFERENCES departments(department_id)
                              ON DELETE SET NULL
-                             ON UPDATE CASCADE
+                             ON UPDATE CASCADE,
+
+                    FULLTEXT KEY ft_faq_question_answer(question, answer)
 );
 
 CREATE TABLE status_history (
