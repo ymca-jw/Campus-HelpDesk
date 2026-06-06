@@ -1,6 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.campus.dto.ComplaintDTO" %>
 
+<%!
+    private String dateText(java.util.Date date) {
+        if (date == null) return "";
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
+    }
+%>
+
 <%
     ComplaintDTO complaint = (ComplaintDTO) request.getAttribute("complaint");
 %>
@@ -9,6 +16,7 @@
 <head>
     <meta charset="UTF-8">
     <title>민원 상세</title>
+    <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/leaf_logo.svg">
 </head>
 <body>
 
@@ -30,9 +38,9 @@
 <p><strong>상태:</strong> <%= complaint.getStatus() %></p>
 <p><strong>추천 수:</strong> <%= complaint.getLikeCount() %></p>
 <p><strong>비공개 여부:</strong> <%= complaint.isPrivateFlag() %></p>
-<p><strong>작성일:</strong> <%= complaint.getCreatedAt() %></p>
-<p><strong>수정일:</strong> <%= complaint.getUpdatedAt() %></p>
-<p><strong>완료일:</strong> <%= complaint.getCompletedAt() %></p>
+<p><strong>작성일:</strong> <%= dateText(complaint.getCreatedAt()) %></p>
+<p><strong>수정일:</strong> <%= dateText(complaint.getUpdatedAt()) %></p>
+<p><strong>완료일:</strong> <%= dateText(complaint.getCompletedAt()) %></p>
 
 <hr>
 

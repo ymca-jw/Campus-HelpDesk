@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>로그인 필요</title>
+    <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/leaf_logo.svg">
     <style>
         body { margin: 0; color: #101828; font-family: Arial, "Noto Sans KR", sans-serif; }
         a { color: inherit; text-decoration: none; }

@@ -7,6 +7,7 @@
 <head>
   <meta charset="UTF-8">
   <title>담당자 대시보드</title>
+    <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/leaf_logo.svg">
 
   <style>
     * {

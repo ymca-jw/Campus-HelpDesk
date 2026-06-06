@@ -31,6 +31,7 @@
 <head>
     <meta charset="UTF-8">
     <title><%= pageTitle %></title>
+    <link rel="icon" type="image/svg+xml" href="<%= request.getContextPath() %>/assets/images/leaf_logo.svg">
     <style>
         body {
             margin: 0;
