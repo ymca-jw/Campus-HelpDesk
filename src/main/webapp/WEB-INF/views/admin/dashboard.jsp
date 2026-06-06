@@ -55,6 +55,22 @@
             object-fit: contain;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-size: 14px;
+            color: #475467;
+        }
+
+        .header-nav a:hover { color: #007a5a; }
+
         .login-area {
             display: flex;
             align-items: center;
@@ -208,13 +224,23 @@
 
 <header class="admin-topbar">
     <div class="admin-header-inner">
-        <a class="admin-logo" href="<%= request.getContextPath() %>/admin/dashboard">
-            <img src="<%= request.getContextPath() %>/assets/images/logo.svg" alt="서경대학교">
-        </a>
+        <div class="header-left">
+            <a class="admin-logo" href="<%= request.getContextPath() %>/admin/dashboard">
+                <img src="<%= request.getContextPath() %>/assets/images/logo.svg" alt="서경대학교">
+            </a>
+            <nav class="header-nav">
+                <a href="<%= request.getContextPath() %>/complaints">민원 목록</a>
+                <a href="<%= request.getContextPath() %>/staff/complaints">부서별 민원 목록</a>
+                <a href="<%= request.getContextPath() %>/admin/dashboard">관리자 대시보드</a>
+            </nav>
+        </div>
         <div class="login-area">
-            <a href="#">로그인</a>
-            <a href="#">마이페이지</a>
-            <a href="#">로그아웃</a>
+            <% if (session.getAttribute("loginUser") == null) { %>
+                <a href="${pageContext.request.contextPath}/user/login">로그인</a>
+            <% } else { %>
+                <a href="${pageContext.request.contextPath}/user/mypage">마이페이지</a>
+                <a href="${pageContext.request.contextPath}/user/logout">로그아웃</a>
+            <% } %>
         </div>
     </div>
 </header>
