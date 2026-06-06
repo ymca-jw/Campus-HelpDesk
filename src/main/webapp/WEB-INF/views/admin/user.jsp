@@ -15,6 +15,15 @@
         if (date == null) return "";
         return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
     }
+
+    private String loginIdText(String loginId) {
+        if (loginId == null) return "";
+        String suffix = "@skuniv.ac.kr";
+        if (loginId.toLowerCase().endsWith(suffix)) {
+            return loginId.substring(0, loginId.length() - suffix.length());
+        }
+        return loginId;
+    }
 %>
 
 <%
@@ -75,7 +84,12 @@
 
         .admin-logo img { display: block; width: 180px; max-height: 52px; object-fit: contain; }
 
+        .header-left { display: flex; align-items: center; gap: 32px; }
+
         .login-area { display: flex; align-items: center; gap: 16px; color: #475467; font-size: 14px; }
+
+        .header-nav { display: flex; align-items: center; gap: 24px; font-size: 14px; color: #475467; }
+        .header-nav a:hover { color: #007a5a; }
 
         /* ── Layout ── */
         .admin-layout {
@@ -163,14 +177,34 @@
         .list-header p  { margin: 0; color: #667085; font-size: 14px; }
 
         /* ── Table ── */
-        table { width: 100%; border-collapse: collapse; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 14px;
+        }
 
         th, td {
             border: 0; border-bottom: 1px solid #e4e7ec;
-            padding: 14px 10px; text-align: center; vertical-align: middle;
+            padding: 14px 8px; text-align: center; vertical-align: middle;
+            word-break: keep-all;
         }
 
         th { color: #667085; background-color: #f8fafc; font-size: 14px; font-weight: 700; }
+
+        th:nth-child(1), td:nth-child(1) { width: 48px; }
+        th:nth-child(2), td:nth-child(2) { width: 140px; }
+        th:nth-child(3), td:nth-child(3) { width: 74px; white-space: nowrap; }
+        th:nth-child(4), td:nth-child(4) { width: 70px; white-space: nowrap; }
+        th:nth-child(5), td:nth-child(5) { width: 120px; }
+        th:nth-child(6), td:nth-child(6) { width: 132px; }
+        th:nth-child(7), td:nth-child(7) { width: 310px; }
+
+        td:nth-child(2) {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         .empty-message {
             padding: 42px 0; border-bottom: 1px solid #d9dee7;
@@ -229,13 +263,23 @@
 
 <header class="admin-topbar">
     <div class="admin-header-inner">
-        <a class="admin-logo" href="<%= request.getContextPath() %>/admin/dashboard">
-            <img src="<%= request.getContextPath() %>/assets/images/logo.svg" alt="서경대학교">
-        </a>
+        <div class="header-left">
+            <a class="admin-logo" href="<%= request.getContextPath() %>/admin/dashboard">
+                <img src="<%= request.getContextPath() %>/assets/images/logo.svg" alt="서경대학교">
+            </a>
+            <nav class="header-nav">
+                <a href="<%= request.getContextPath() %>/complaints">민원 목록</a>
+                <a href="<%= request.getContextPath() %>/staff/complaints">부서별 민원 목록</a>
+                <a href="<%= request.getContextPath() %>/admin/dashboard">관리자 대시보드</a>
+            </nav>
+        </div>
         <div class="login-area">
-            <a href="#">로그인</a>
-            <a href="#">마이페이지</a>
-            <a href="#">로그아웃</a>
+            <% if (session.getAttribute("loginUser") == null) { %>
+                <a href="${pageContext.request.contextPath}/user/login">로그인</a>
+            <% } else { %>
+                <a href="${pageContext.request.contextPath}/user/mypage">마이페이지</a>
+                <a href="${pageContext.request.contextPath}/user/logout">로그아웃</a>
+            <% } %>
         </div>
     </div>
 </header>
@@ -326,7 +370,7 @@
             <% for (UserDTO user : users) { %>
             <tr>
                 <td><%= user.getUserId() %></td>
-                <td><%= user.getLoginId() %></td>
+                <td title="<%= user.getLoginId() %>"><%= loginIdText(user.getLoginId()) %></td>
                 <td><%= user.getName() %></td>
                 <td><%= roleText(user.getRole()) %></td>
                 <td><%= user.getDepartmentName() != null ? user.getDepartmentName() : "-" %></td>
@@ -431,7 +475,7 @@
 
       if (!roleFilter || !departmentFilter) return;
 
-      if (roleFilter.value === "STUDENT") {
+      if (roleFilter.value === "STUDENT" || roleFilter.value === "ADMIN") {
         departmentFilter.value = "";
         departmentFilter.disabled = true;
       } else {
@@ -450,7 +494,7 @@
         departmentText = departmentSelect.options[departmentSelect.selectedIndex].text;
       }
 
-      if (role === "STUDENT") {
+      if (role === "STUDENT" || role === "ADMIN") {
         departmentText = "담당부서 없음";
       }
 
@@ -467,7 +511,7 @@
 
       if (!roleSelect || !departmentSelect) return;
 
-      if (roleSelect.value === "STUDENT") {
+      if (roleSelect.value === "STUDENT" || roleSelect.value === "ADMIN") {
         departmentSelect.value = "";
         departmentSelect.disabled = true;
       } else if (roleSelect.value === "STAFF") {

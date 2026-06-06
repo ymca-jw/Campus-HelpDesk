@@ -51,6 +51,12 @@
       object-fit: contain;
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
     .login-area {
       display: flex;
       align-items: center;
@@ -58,6 +64,16 @@
       color: #475467;
       font-size: 14px;
     }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 14px;
+      color: #475467;
+    }
+
+    .header-nav a:hover { color: #007a5a; }
 
     .staff-layout {
       display: flex;
@@ -237,13 +253,28 @@
 
 <header class="staff-topbar">
   <div class="staff-header-inner">
-    <a class="staff-logo" href="${pageContext.request.contextPath}/staff/dashboard">
-      <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="서경대학교">
-    </a>
+    <div class="header-left">
+      <a class="staff-logo" href="${pageContext.request.contextPath}/staff/dashboard">
+        <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="서경대학교">
+      </a>
+      <nav class="header-nav">
+        <a href="${pageContext.request.contextPath}/complaints">민원 목록</a>
+        <c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+          <a href="${pageContext.request.contextPath}/staff/complaints">부서별 민원 목록</a>
+          <a href="${pageContext.request.contextPath}/admin/dashboard">관리자 대시보드</a>
+        </c:if>
+        <c:if test="${sessionScope.loginUser.role == 'STAFF'}">
+          <a href="${pageContext.request.contextPath}/staff/dashboard">담당자 대시보드</a>
+        </c:if>
+      </nav>
+    </div>
     <div class="login-area">
-      <a href="#">로그인</a>
-      <a href="#">마이페이지</a>
-      <a href="#">로그아웃</a>
+      <% if (session.getAttribute("loginUser") == null) { %>
+        <a href="${pageContext.request.contextPath}/user/login">로그인</a>
+      <% } else { %>
+        <a href="${pageContext.request.contextPath}/user/mypage">마이페이지</a>
+        <a href="${pageContext.request.contextPath}/user/logout">로그아웃</a>
+      <% } %>
     </div>
   </div>
 </header>
@@ -254,14 +285,6 @@
       <button type="button" class="side-toggle">담당자 메뉴</button>
       <div class="side-links">
         <a class="active" href="${pageContext.request.contextPath}/staff/dashboard">메인</a>
-        <a href="${pageContext.request.contextPath}/staff/complaints">담당부서 민원목록</a>
-        <a href="${pageContext.request.contextPath}/complaints">일반 민원 목록</a>
-      </div>
-    </div>
-
-    <div class="side-section">
-      <button type="button" class="side-toggle">대시보드 바로가기</button>
-      <div class="side-links">
         <a href="${pageContext.request.contextPath}/staff/complaints?quickFilter=pending">처리 대기 민원</a>
         <a href="${pageContext.request.contextPath}/staff/complaints?quickFilter=recent">최근 접수된 민원</a>
       </div>

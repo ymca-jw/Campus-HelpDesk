@@ -139,7 +139,7 @@ public class AdminDAO {
                 u.created_at
             FROM users u
             LEFT JOIN departments d ON u.department_id = d.department_id
-            WHERE u.role <> 'ADMIN'
+            WHERE 1 = 1
             """);
 
         if (hasRole) {
@@ -313,7 +313,6 @@ public class AdminDAO {
             FROM users u
             LEFT JOIN departments d ON u.department_id = d.department_id
             WHERE u.user_id = ?
-              AND u.role <> 'ADMIN'
             """;
 
         try (

@@ -2,6 +2,7 @@
 <%@ page import="com.campus.dto.AnswerDTO" %>
 <%@ page import="com.campus.dto.ComplaintDTO" %>
 <%@ page import="com.campus.dto.StatusHistoryDTO" %>
+<%@ page import="com.campus.dto.UserDTO" %>
 <%@ page import="java.util.List" %>
 
 <%!
@@ -23,8 +24,14 @@
 <%
     ComplaintDTO complaint = (ComplaintDTO) request.getAttribute("complaint");
     AnswerDTO answer = (AnswerDTO) request.getAttribute("answer");
+    Boolean canManageComplaintAttr = (Boolean) request.getAttribute("canManageComplaint");
+    boolean canManageComplaint = canManageComplaintAttr != null && canManageComplaintAttr;
+    Boolean canManageAnswerAttr = (Boolean) request.getAttribute("canManageAnswer");
+    boolean canManageAnswer = canManageAnswerAttr != null && canManageAnswerAttr;
     List<StatusHistoryDTO> statusHistories =
             (List<StatusHistoryDTO>) request.getAttribute("statusHistories");
+    UserDTO navUser = (UserDTO) session.getAttribute("loginUser");
+    String userRole = navUser != null ? navUser.getRole() : "";
 %>
 
 <!DOCTYPE html>
@@ -72,6 +79,12 @@
             object-fit: contain;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
         .login-area {
             display: flex;
             align-items: center;
@@ -79,6 +92,16 @@
             color: #475467;
             font-size: 14px;
         }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-size: 14px;
+            color: #475467;
+        }
+
+        .header-nav a:hover { color: #007a5a; }
 
         .staff-layout {
             display: flex;
@@ -459,13 +482,27 @@
 
 <header class="staff-topbar">
     <div class="staff-header-inner">
-        <a class="staff-logo" href="<%= request.getContextPath() %>/staff/dashboard">
-            <img src="<%= request.getContextPath() %>/assets/images/logo.svg" alt="서경대학교">
-        </a>
+        <div class="header-left">
+            <a class="staff-logo" href="<%= request.getContextPath() %>/staff/dashboard">
+                <img src="<%= request.getContextPath() %>/assets/images/logo.svg" alt="서경대학교">
+            </a>
+            <nav class="header-nav">
+                <a href="<%= request.getContextPath() %>/complaints">민원 목록</a>
+                <% if ("ADMIN".equals(userRole)) { %>
+                    <a href="<%= request.getContextPath() %>/staff/complaints">부서별 민원 목록</a>
+                    <a href="<%= request.getContextPath() %>/admin/dashboard">관리자 대시보드</a>
+                <% } else if ("STAFF".equals(userRole)) { %>
+                    <a href="<%= request.getContextPath() %>/staff/dashboard">담당자 대시보드</a>
+                <% } %>
+            </nav>
+        </div>
         <div class="login-area">
-            <a href="#">로그인</a>
-            <a href="#">마이페이지</a>
-            <a href="#">로그아웃</a>
+            <% if (session.getAttribute("loginUser") == null) { %>
+                <a href="<%= request.getContextPath() %>/user/login">로그인</a>
+            <% } else { %>
+                <a href="<%= request.getContextPath() %>/user/mypage">마이페이지</a>
+                <a href="<%= request.getContextPath() %>/user/logout">로그아웃</a>
+            <% } %>
         </div>
     </div>
 </header>
@@ -476,14 +513,6 @@
             <button type="button" class="side-toggle">담당자 메뉴</button>
             <div class="side-links">
                 <a href="<%= request.getContextPath() %>/staff/dashboard">메인</a>
-                <a class="active" href="<%= request.getContextPath() %>/staff/complaints">담당부서 민원목록</a>
-                <a href="<%= request.getContextPath() %>/complaints">일반 민원 목록</a>
-            </div>
-        </div>
-
-        <div class="side-section">
-            <button type="button" class="side-toggle">대시보드 바로가기</button>
-            <div class="side-links">
                 <a href="<%= request.getContextPath() %>/staff/complaints?quickFilter=pending">처리 대기 민원</a>
                 <a href="<%= request.getContextPath() %>/staff/complaints?quickFilter=recent">최근 접수된 민원</a>
             </div>
@@ -522,31 +551,36 @@
                     <h2>담당자 답변</h2>
                 </div>
 
-                <% if (answer == null) { %>
+                <% if (answer == null && canManageComplaint) { %>
                     <form id="answerCreateForm" action="<%= request.getContextPath() %>/staff/answer" method="post">
                         <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
                         <textarea name="content" required placeholder="답변 내용을 입력하세요."></textarea>
                     </form>
-                <% } else { %>
+                <% } else if (answer != null) { %>
                     <p class="answer-meta">
                         답변 담당자 <strong><%= answer.getStaffName() %></strong> · 작성일 <%= dateText(answer.getCreatedAt()) %>
                     </p>
 
-                    <form id="answerUpdateForm" action="<%= request.getContextPath() %>/staff/answer/update" method="post">
-                        <input type="hidden" name="answerId" value="<%= answer.getAnswerId() %>">
-                        <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
-                        <textarea name="content" required><%= answer.getContent() %></textarea>
-                    </form>
+                    <% if (canManageAnswer) { %>
+                        <form id="answerUpdateForm" action="<%= request.getContextPath() %>/staff/answer/update" method="post">
+                            <input type="hidden" name="answerId" value="<%= answer.getAnswerId() %>">
+                            <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+                            <textarea name="content" required><%= answer.getContent() %></textarea>
+                        </form>
 
-                    <form id="answerDeleteForm"
-                          action="<%= request.getContextPath() %>/staff/answer/delete"
-                          method="post"
-                          onsubmit="return confirm('정말 답변을 삭제하시겠습니까?');">
-                        <input type="hidden" name="answerId" value="<%= answer.getAnswerId() %>">
-                        <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
-                    </form>
+                        <form id="answerDeleteForm"
+                              action="<%= request.getContextPath() %>/staff/answer/delete"
+                              method="post"
+                              onsubmit="return confirm('정말 답변을 삭제하시겠습니까?');">
+                            <input type="hidden" name="answerId" value="<%= answer.getAnswerId() %>">
+                            <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+                        </form>
+                    <% } else { %>
+                        <div class="content-box"><%= answer.getContent() %></div>
+                    <% } %>
                 <% } %>
 
+                <% if (canManageComplaint) { %>
                 <form class="status-form" id="statusForm" action="<%= request.getContextPath() %>/staff/status" method="post">
                     <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
                     <input class="status-reason"
@@ -566,11 +600,12 @@
                         <span class="status-message" id="statusMessage"></span>
                     </div>
                 </form>
+                <% } %>
 
                 <div class="answer-actions">
-                    <% if (answer == null) { %>
+                    <% if (answer == null && canManageComplaint) { %>
                         <button type="submit" class="button primary" form="answerCreateForm">답변 등록</button>
-                    <% } else { %>
+                    <% } else if (answer != null && canManageAnswer) { %>
                         <button type="submit" class="button primary" form="answerUpdateForm">답변 수정</button>
                         <button type="submit" class="button danger" form="answerDeleteForm">답변 삭제</button>
                     <% } %>

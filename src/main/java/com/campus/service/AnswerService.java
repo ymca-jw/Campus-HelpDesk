@@ -59,13 +59,14 @@ public class AnswerService {
     }
 
     // 답변 삭제
-    public void removeAnswer(Long answerId, Long complaintId) {
+    public void removeAnswer(Long answerId, Long complaintId, Long changedBy) {
         if (answerId == null || answerId <= 0) return;
         if (complaintId == null || complaintId <= 0) return;
+        if (changedBy == null || changedBy <= 0) return;
 
         answerDAO.deleteAnswer(answerId);
 
-        changeComplaintStatus(complaintId, "RECEIVED", 3L, "답변 삭제");
+        changeComplaintStatus(complaintId, "RECEIVED", changedBy, "답변 삭제");
     }
 
     // 상태 변경
@@ -99,11 +100,11 @@ public class AnswerService {
 
     public Map<String, Integer> countComplaintsByStatuses(Long departmentId) {
         Map<String, Integer> statusCounts = new LinkedHashMap<>();
-        statusCounts.put("RECEIVED", countComplaintsByDepartmentAndStatus(departmentId, "RECEIVED"));
-        statusCounts.put("REVIEWING", countComplaintsByDepartmentAndStatus(departmentId, "REVIEWING"));
-        statusCounts.put("PROCESSING", countComplaintsByDepartmentAndStatus(departmentId, "PROCESSING"));
-        statusCounts.put("COMPLETED", countComplaintsByDepartmentAndStatus(departmentId, "COMPLETED"));
-        statusCounts.put("REJECTED", countComplaintsByDepartmentAndStatus(departmentId, "REJECTED"));
+        statusCounts.put("RECEIVED", countComplaintsByStatus(departmentId, "RECEIVED"));
+        statusCounts.put("REVIEWING", countComplaintsByStatus(departmentId, "REVIEWING"));
+        statusCounts.put("PROCESSING", countComplaintsByStatus(departmentId, "PROCESSING"));
+        statusCounts.put("COMPLETED", countComplaintsByStatus(departmentId, "COMPLETED"));
+        statusCounts.put("REJECTED", countComplaintsByStatus(departmentId, "REJECTED"));
 
         return statusCounts;
     }
@@ -111,7 +112,7 @@ public class AnswerService {
     public List<ComplaintDTO> findRecentComplaintsByDepartment(Long departmentId, int limit) {
         if (limit <= 0) return List.of();
 
-        return findComplaintsByDepartment(departmentId).stream()
+        return findComplaintsForDashboard(departmentId).stream()
                 .limit(limit)
                 .toList();
     }
@@ -119,12 +120,28 @@ public class AnswerService {
     public List<ComplaintDTO> findPendingComplaintsByDepartment(Long departmentId, int limit) {
         if (limit <= 0) return List.of();
 
-        return findComplaintsByDepartment(departmentId).stream()
+        return findComplaintsForDashboard(departmentId).stream()
                 .filter(complaint -> "RECEIVED".equals(complaint.getStatus())
                         || "REVIEWING".equals(complaint.getStatus())
                         || "PROCESSING".equals(complaint.getStatus()))
                 .limit(limit)
                 .toList();
+    }
+
+    private int countComplaintsByStatus(Long departmentId, String status) {
+        if (departmentId == null) {
+            return complaintDAO.countComplaints(null, null, null, status, null, null, "", null);
+        }
+
+        return countComplaintsByDepartmentAndStatus(departmentId, status);
+    }
+
+    private List<ComplaintDTO> findComplaintsForDashboard(Long departmentId) {
+        if (departmentId == null) {
+            return complaintDAO.findComplaints(null, null, null, null, null, null, "", "", null, 1, 1000);
+        }
+
+        return findComplaintsByDepartment(departmentId);
     }
 
     // 민원 상세 (담당자)

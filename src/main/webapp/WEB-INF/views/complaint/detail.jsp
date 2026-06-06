@@ -2,6 +2,8 @@
 <%@ page import="com.campus.dto.ComplaintDTO" %>
 <%@ page import="com.campus.dto.AnswerDTO" %>
 <%@ page import="com.campus.dto.StatusHistoryDTO" %>
+<%@ page import="com.campus.dto.UserDTO" %>
+<%@ page import="com.campus.dto.AttachmentDTO" %>
 <%@ page import="java.util.List" %>
 
 <%!
@@ -27,6 +29,10 @@
             (List<StatusHistoryDTO>) request.getAttribute("statusHistories");
     Boolean likedByMeAttr = (Boolean) request.getAttribute("likedByMe");
     boolean likedByMe = likedByMeAttr != null && likedByMeAttr;
+    Boolean canManageComplaintAttr = (Boolean) request.getAttribute("canManageComplaint");
+    boolean canManageComplaint = canManageComplaintAttr != null && canManageComplaintAttr;
+    UserDTO navUser = (UserDTO) session.getAttribute("loginUser");
+    String userRole = navUser != null ? navUser.getRole() : "";
 %>
 
 <!DOCTYPE html>
@@ -69,7 +75,18 @@
         .header-left {
             display: flex;
             align-items: center;
+            gap: 32px;
         }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-size: 14px;
+            color: #475467;
+        }
+
+        .header-nav a:hover { color: #007a5a; }
 
         .brand img {
             display: block;
@@ -228,6 +245,23 @@
             border: 0;
             background: #0b7a55;
             color: #fff;
+        }
+
+        .button.danger {
+            border: 0;
+            background: #c92a20;
+            color: #fff;
+        }
+
+        .answer-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 18px 0 28px;
+        }
+
+        .answer-actions form {
+            margin: 0;
         }
 
         .post-meta {
@@ -449,13 +483,24 @@
             <a class="brand" href="${pageContext.request.contextPath}/complaints">
                 <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
             </a>
-
+            <nav class="header-nav">
+                <a href="<%= request.getContextPath() %>/complaints">민원 목록</a>
+                <% if ("ADMIN".equals(userRole)) { %>
+                    <a href="<%= request.getContextPath() %>/staff/complaints">부서별 민원 목록</a>
+                    <a href="<%= request.getContextPath() %>/admin/dashboard">관리자 대시보드</a>
+                <% } else if ("STAFF".equals(userRole)) { %>
+                    <a href="<%= request.getContextPath() %>/staff/dashboard">담당자 대시보드</a>
+                <% } %>
+            </nav>
         </div>
 
         <div class="auth-nav">
-            <a href="#">로그인</a>
-            <a href="#">마이페이지</a>
-            <a href="#">로그아웃</a>
+            <% if (session.getAttribute("loginUser") == null) { %>
+                <a href="${pageContext.request.contextPath}/user/login">로그인</a>
+            <% } else { %>
+                <a href="${pageContext.request.contextPath}/user/mypage">마이페이지</a>
+                <a href="${pageContext.request.contextPath}/user/logout">로그아웃</a>
+            <% } %>
         </div>
     </div>
 </header>
@@ -508,32 +553,64 @@
                         <span><%= dateText(complaint.getCreatedAt()) %></span>
                         <span class="status-pill"><%= statusText(complaint.getStatus()) %></span>
                     </div>
+                    <div class="like-stack" style="margin-left: auto;">
+                        <form class="like-form" id="likeForm" action="<%= request.getContextPath() %>/complaints/like" method="post" style="margin: 0;">
+                            <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+                            <button class="heart-button <%= likedByMe ? "liked" : "" %>"
+                                    id="likeButton"
+                                    type="submit"
+                                    data-liked="<%= likedByMe %>"
+                                    aria-label="민원 추천"
+                                    style="margin: 0;">
+                                <svg id="heartIcon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M20.8 4.6c-1.9-1.8-5-1.7-6.8.1L12 6.7 10 4.7C8.2 2.9 5.1 2.8 3.2 4.6c-2 1.9-2.1 5.1-.1 7.1L12 20.3l8.9-8.6c2-2 1.9-5.2-.1-7.1z"/>
+                                </svg>
+                                <span id="likeCount"><%= complaint.getLikeCount() %></span>
+                            </button>
+                        </form>
+                        <span id="likeMessage"></span>
+                    </div>
                 </div>
             </div>
             <div class="detail-action-area">
                 <button type="button" class="button secondary" id="timelineButton">타임라인</button>
-                <div class="like-stack">
-                    <form class="like-form" id="likeForm" action="<%= request.getContextPath() %>/complaints/like" method="post">
-                        <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
-                        <button class="heart-button <%= likedByMe ? "liked" : "" %>"
-                                id="likeButton"
-                                type="submit"
-                                data-liked="<%= likedByMe %>"
-                                aria-label="민원 추천">
-                            <svg id="heartIcon" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M20.8 4.6c-1.9-1.8-5-1.7-6.8.1L12 6.7 10 4.7C8.2 2.9 5.1 2.8 3.2 4.6c-2 1.9-2.1 5.1-.1 7.1L12 20.3l8.9-8.6c2-2 1.9-5.2-.1-7.1z"/>
-                            </svg>
-                            <span id="likeCount"><%= complaint.getLikeCount() %></span>
-                        </button>
-                    </form>
-                    <span id="likeMessage"></span>
-                </div>
             </div>
         </section>
 
         <section class="content-section">
             <div class="content-box"><%= complaint.getContent() %></div>
+            
+            <% 
+               List<AttachmentDTO> attachments = (List<AttachmentDTO>) request.getAttribute("attachments");
+               if (attachments != null && !attachments.isEmpty()) { 
+            %>
+                <div class="attachment-gallery" style="margin-top: 20px;">
+                    <h3 style="font-size: 16px; margin-bottom: 12px; color: #475467;">첨부 파일</h3>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <% for (AttachmentDTO att : attachments) { %>
+                            <div style="border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; background: #f9fafb; display: inline-flex; align-items: center; gap: 8px;">
+                                <svg style="width: 16px; height: 16px; color: #667085;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                </svg>
+                                <a href="<%= request.getContextPath() %>/complaints/download?id=<%= att.getAttachmentId() %>" style="font-size: 14px; color: #007a5a; text-decoration: none; font-weight: 500;" title="<%= att.getOriginalName() %>">
+                                    <%= att.getOriginalName() %>
+                                </a>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
         </section>
+
+        <% if (canManageComplaint) { %>
+            <div class="answer-actions">
+                <a class="button secondary" href="<%= request.getContextPath() %>/complaints/edit?id=<%= complaint.getComplaintId() %>">수정</a>
+                <form action="<%= request.getContextPath() %>/complaints/delete" method="post" onsubmit="return confirm('정말 민원을 삭제하시겠습니까?');">
+                    <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+                    <button type="submit" class="button danger">삭제</button>
+                </form>
+            </div>
+        <% } %>
 
         <section class="content-section">
             <h2 class="section-title">담당자 답변</h2>

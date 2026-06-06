@@ -1,6 +1,5 @@
 package com.campus.dao;
 
-import com.campus.dto.DepartmentDTO;
 import com.campus.dto.UserDTO;
 import com.campus.util.DBUtil;
 import java.sql.*;
@@ -77,5 +76,33 @@ public class UserDAO {
         }
 
         return false;
+    }
+
+    public int insertUser(UserDTO user) {
+        String sql = """
+                INSERT INTO users (login_id, password, name, role, department_id)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+
+        try (
+                Connection conn = DBUtil.getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)
+        ) {
+            pstmt.setString(1, user.getLoginId());
+            pstmt.setString(2, user.getPassword());
+            pstmt.setString(3, user.getName());
+            pstmt.setString(4, user.getRole());
+
+            if (user.getDepartmentId() == null) {
+                pstmt.setNull(5, Types.BIGINT);
+            } else {
+                pstmt.setLong(5, user.getDepartmentId());
+            }
+
+            return pstmt.executeUpdate();
+        }
+        catch (SQLException e) {
+            throw new RuntimeException("사용자 등록 중 오류가 발생했습니다.", e);
+        }
     }
 }
