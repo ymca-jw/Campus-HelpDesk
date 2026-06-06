@@ -4,6 +4,7 @@ import com.campus.dto.AnswerDTO;
 import com.campus.dto.ComplaintDTO;
 import com.campus.dto.DepartmentDTO;
 import com.campus.dto.StatusHistoryDTO;
+import com.campus.dto.UserDTO;
 import com.campus.service.AnswerService;
 import com.campus.service.ComplaintService;
 import com.campus.service.DepartmentService;
@@ -14,6 +15,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.List;
@@ -102,10 +104,13 @@ public class AnswerController extends HttpServlet {
     // 담당자 대시보드
     private void staffDashboard(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
-        // TODO: 로그인 기능 완성 후 session의 loginUser.getDepartmentId()로 변경
-        Long staffDepartmentId = 5L;
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
 
-        DepartmentDTO staffDepartment = departmentService.findDepartmentById(staffDepartmentId);
+        Long staffDepartmentId = getStaffDepartmentIdForFilter(loginUser);
+        DepartmentDTO staffDepartment = staffDepartmentId == null ? null : departmentService.findDepartmentById(staffDepartmentId);
         Map<String, Integer> statusCounts = answerService.countComplaintsByStatuses(staffDepartmentId);
         List<ComplaintDTO> pendingComplaints = answerService.findPendingComplaintsByDepartment(staffDepartmentId, 3);
         List<ComplaintDTO> recentComplaints = answerService.findRecentComplaintsByDepartment(staffDepartmentId, 3);
@@ -121,8 +126,12 @@ public class AnswerController extends HttpServlet {
     // 담당 부서 민원 목록
     private void staffComplaintList(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
-        // TODO: 로그인 완성 후 session의 loginUser.getDepartmentId()로 변경
-        Long staffDepartmentId = 5L;
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
+
+        Long staffDepartmentId = getStaffDepartmentIdForFilter(loginUser);
 
         String departmentType = req.getParameter("departmentType");
         String category = req.getParameter("category");
@@ -170,7 +179,9 @@ public class AnswerController extends HttpServlet {
                 category,
                 status,
                 searchType,
-                keyword
+                keyword,
+                "",
+                null
         );
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
 
@@ -190,6 +201,8 @@ public class AnswerController extends HttpServlet {
                 searchType,
                 keyword,
                 likeSort,
+                "",
+                null,
                 page,
                 pageSize
         );
@@ -228,11 +241,17 @@ public class AnswerController extends HttpServlet {
             return;
         }
 
+        if (!canManageComplaint(req, res, complaint)) {
+            return;
+        }
+
         AnswerDTO answer = answerService.findAnswer(complaintId);
         List<StatusHistoryDTO> statusHistories = answerService.findStatusHistories(complaintId);
 
         req.setAttribute("complaint", complaint);
         req.setAttribute("answer", answer);
+        req.setAttribute("canManageComplaint", true);
+        req.setAttribute("canManageAnswer", canManageAnswer(getLoginUser(req), answer));
         req.setAttribute("statusHistories", statusHistories);
 
         req.getRequestDispatcher("/WEB-INF/views/staff/detail.jsp")
@@ -251,11 +270,25 @@ public class AnswerController extends HttpServlet {
             return;
         }
 
+        ComplaintDTO complaint = answerService.findComplaintDetail(complaintId);
+        if (complaint == null) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
         AnswerDTO answer = new AnswerDTO();
         answer.setComplaintId(complaintId);
 
-        // TODO: 로그인 기능 완성 후 session의 loginUser.getUserId()로 변경
-        answer.setStaffId(3L);
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
+
+        if (!canManageComplaint(req, res, complaint)) {
+            return;
+        }
+
+        answer.setStaffId(loginUser.getUserId());
         answer.setContent(content);
         answerService.registerAnswer(answer);
         res.sendRedirect(req.getContextPath() + "/staff/complaints/detail?id=" + complaintId);
@@ -272,6 +305,18 @@ public class AnswerController extends HttpServlet {
         String content = req.getParameter("content");
         if (content == null || content.isBlank()) {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        ComplaintDTO complaint = answerService.findComplaintDetail(complaintId);
+        if (complaint == null) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        AnswerDTO oldAnswer = answerService.findAnswer(complaintId);
+        if (!canManageComplaint(req, res, complaint) || !canManageAnswer(getLoginUser(req), oldAnswer)) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
@@ -293,7 +338,19 @@ public class AnswerController extends HttpServlet {
         Long complaintId = parseLongParam(req, res, "complaintId");
         if (complaintId == null) return;
 
-        answerService.removeAnswer(answerId, complaintId);
+        ComplaintDTO complaint = answerService.findComplaintDetail(complaintId);
+        if (complaint == null) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        AnswerDTO answer = answerService.findAnswer(complaintId);
+        if (!canManageComplaint(req, res, complaint) || !canManageAnswer(getLoginUser(req), answer)) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        answerService.removeAnswer(answerId, complaintId, getLoginUser(req).getUserId());
 
         res.sendRedirect(req.getContextPath() + "/staff/complaints/detail?id=" + complaintId);
     }
@@ -312,8 +369,22 @@ public class AnswerController extends HttpServlet {
 
         String reason = req.getParameter("reason");
 
-        Long staffId = 3L; // TODO: 로그인 기능 완성 후 session의 loginUser.getUserId()로 변경
-        answerService.updateComplaintStatus(complaintId, status, staffId, reason);
+        ComplaintDTO complaint = answerService.findComplaintDetail(complaintId);
+        if (complaint == null) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
+
+        if (!canManageComplaint(req, res, complaint)) {
+            return;
+        }
+
+        answerService.updateComplaintStatus(complaintId, status, loginUser.getUserId(), reason);
 
         if (isAjaxRequest(req)) {
             res.setContentType("application/json; charset=UTF-8");
@@ -327,6 +398,67 @@ public class AnswerController extends HttpServlet {
 
     private boolean isAjaxRequest(HttpServletRequest req) {
         return "XMLHttpRequest".equals(req.getHeader("X-Requested-With"));
+    }
+
+    private UserDTO getLoginUser(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            return null;
+        }
+
+        Object loginUser = session.getAttribute("loginUser");
+        return loginUser instanceof UserDTO ? (UserDTO) loginUser : null;
+    }
+
+    private UserDTO requireLoginUser(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        UserDTO loginUser = getLoginUser(req);
+        if (loginUser == null) {
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return null;
+        }
+
+        return loginUser;
+    }
+
+    private Long getStaffDepartmentIdForFilter(UserDTO loginUser) {
+        if ("ADMIN".equals(loginUser.getRole())) {
+            return null;
+        }
+
+        return loginUser.getDepartmentId();
+    }
+
+    private boolean canManageComplaint(HttpServletRequest req, HttpServletResponse res, ComplaintDTO complaint) throws IOException {
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return false;
+        }
+
+        if ("ADMIN".equals(loginUser.getRole())) {
+            return true;
+        }
+
+        Long departmentId = loginUser.getDepartmentId();
+        if (departmentId == null || departmentId <= 0) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+
+        if (!departmentId.equals(complaint.getDepartmentId())) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean canManageAnswer(UserDTO loginUser, AnswerDTO answer) {
+        if (loginUser == null || answer == null) {
+            return false;
+        }
+
+        return "ADMIN".equals(loginUser.getRole())
+                || loginUser.getUserId().equals(answer.getStaffId());
     }
 
     private String statusText(String status) {

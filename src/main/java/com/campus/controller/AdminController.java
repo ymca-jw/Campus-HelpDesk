@@ -134,7 +134,7 @@ public class AdminController extends HttpServlet {
             }
         }
 
-        if ("STUDENT".equals(role)) {
+        if ("STUDENT".equals(role) || "ADMIN".equals(role)) {
             departmentId = null;
         }
 
@@ -162,7 +162,7 @@ public class AdminController extends HttpServlet {
 
         List<UserDTO> users = adminService.findUsers(role, departmentId, searchType, keyword, page, pageSize);
         List<DepartmentDTO> departments = departmentService.findAllDepartments();
-        List<String> roles = List.of("STUDENT", "STAFF");   // 웹 상에서 ADMIN으로 역할 변경 불가
+        List<String> roles = List.of("STUDENT", "STAFF", "ADMIN");
 
         req.setAttribute("users", users);
         req.setAttribute("departments", departments);
