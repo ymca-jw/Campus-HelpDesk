@@ -9,6 +9,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class ComplaintDAO {
 
     // 민원 전체 목록 조회
@@ -571,8 +572,6 @@ public class ComplaintDAO {
 
         return complaint;
     }
-
-
     // 1. 민원 등록 (Insert)
     public void insertComplaint(ComplaintDTO complaint) {
         String sql = """
@@ -592,7 +591,6 @@ public class ComplaintDAO {
             pstmt.setString(5, complaint.getContent());
             pstmt.setString(6, complaint.getStatus());
             pstmt.setBoolean(7, complaint.isPrivateFlag());
-
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -794,8 +792,6 @@ public class ComplaintDAO {
             throw new RuntimeException("민원 삭제 중 오류 발생", e);
         }
     }
-
-
     // 부서 조회 (담당자)
     public List<ComplaintDTO> findByDepartmentId(Long departmentId) {
         List<ComplaintDTO> complaints = new ArrayList<>();
@@ -895,5 +891,4 @@ public class ComplaintDAO {
 
         return 0;
     }
-
 }

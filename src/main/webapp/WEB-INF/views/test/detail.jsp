@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.campus.dto.ComplaintDTO" %>
+<%@ page import="com.campus.dto.AnswerDTO" %>
 
 <%!
     private String dateText(java.util.Date date) {
@@ -9,7 +10,9 @@
 %>
 
 <%
+
     ComplaintDTO complaint = (ComplaintDTO) request.getAttribute("complaint");
+    AnswerDTO answer = (AnswerDTO) request.getAttribute("answer"); // 가져온 답변 받기
 %>
 
 <html>
@@ -26,7 +29,7 @@
 
 <% if (complaint == null) { %>
 
-<p>민원 정보를 불러올 수 없습니다.</p>
+    <p>민원 정보를 불러올 수 없습니다.</p>
 
 <% } else { %>
 
@@ -41,11 +44,43 @@
 <p><strong>작성일:</strong> <%= dateText(complaint.getCreatedAt()) %></p>
 <p><strong>수정일:</strong> <%= dateText(complaint.getUpdatedAt()) %></p>
 <p><strong>완료일:</strong> <%= dateText(complaint.getCompletedAt()) %></p>
+    <hr>
 
-<hr>
+    <h3>민원 내용</h3>
+    <p><%= complaint.getContent() %></p>
 
-<h3>민원 내용</h3>
-<p><%= complaint.getContent() %></p>
+    <hr>
+
+    <% if (answer != null) { %>
+        <h3>담당자 답변</h3>
+        <p><strong>담당자:</strong> <%= answer.getStaffName() %></p>
+        <p><strong>답변일:</strong> <%= answer.getCreatedAt() %></p>
+        
+        <p style="color: blue;"><%= answer.getContent() %></p>
+        
+        <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+            <form action="<%= request.getContextPath() %>/complaints/answer/update" method="post" style="display:inline;">
+                <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+                <input type="hidden" name="answerId" value="<%= answer.getAnswerId() %>">
+                <textarea name="content" rows="2" cols="40" required><%= answer.getContent() %></textarea>
+                <button type="submit">답변 수정</button>
+            </form>
+
+            <form action="<%= request.getContextPath() %>/complaints/answer/delete" method="post" style="display:inline;" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+                <input type="hidden" name="answerId" value="<%= answer.getAnswerId() %>">
+                <button type="submit" style="color: red;">답변 삭제</button>
+            </form>
+        </div>
+    <% } else { %>
+        <h3>[담당자 전용] 답변 달기</h3>
+        <form action="<%= request.getContextPath() %>/complaints/answer" method="post">
+            <input type="hidden" name="complaintId" value="<%= complaint.getComplaintId() %>">
+            <textarea name="content" rows="4" cols="50" placeholder="민원에 대한 답변을 작성해주세요." required></textarea>
+            <br><br>
+            <button type="submit">답변 등록 및 완료 처리</button>
+        </form>
+    <% } %>
 
 <% } %>
 

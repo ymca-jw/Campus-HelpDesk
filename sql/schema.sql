@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS campus_helpdesk;
+USE campus_helpdesk;
+
 DROP TABLE IF EXISTS status_history;
 DROP TABLE IF EXISTS complaint_likes;
 DROP TABLE IF EXISTS complaint_attachments;

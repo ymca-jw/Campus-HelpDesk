@@ -1,5 +1,6 @@
 package com.campus.service;
 
+import com.campus.dao.AnswerDAO;
 import com.campus.dao.ComplaintDAO;
 import com.campus.dao.ComplaintLikeDAO;
 import com.campus.dao.StatusHistoryDAO;
@@ -18,6 +19,7 @@ public class ComplaintService {
     private final ComplaintDAO complaintDAO =  new ComplaintDAO();
     private final ComplaintLikeDAO complaintLikeDAO = new ComplaintLikeDAO();
     private final StatusHistoryDAO statusHistoryDAO = new StatusHistoryDAO();
+
 
     // 민원 목록
     public List<ComplaintDTO> findComplaintList() {

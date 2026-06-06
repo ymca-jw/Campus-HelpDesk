@@ -66,15 +66,17 @@ public class ComplaintController extends HttpServlet {
             faqTest(req, res);
             return;
         }
+        //[작성 화면] 빈 폼 보여주기
         if ("/complaints/new".equals(path)) {
-            complaintNewForm(req, res);
+        	complaintNewForm(req, res);
+            return;
+        }
+        //[수정 화면] 기존 데이터 채워서 폼 보여주기
+        if ("/complaints/edit".equals(path)) {
+        	complaintEditForm(req, res);
             return;
         }
 
-        if ("/complaints/edit".equals(path)) {
-            complaintEditForm(req, res);
-            return;
-        }
 
         if ("/complaints/download".equals(path)) {
             complaintDownload(req, res);
@@ -277,7 +279,7 @@ public class ComplaintController extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/complaint/list.jsp").forward(req, res);
     }
 
-    // 민원 상세
+ // 민원 상세
     private void complaintDetail(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         String _id = req.getParameter("id");
         if (_id == null || _id.equals("")) {
@@ -295,6 +297,7 @@ public class ComplaintController extends HttpServlet {
         }
 
         ComplaintDTO complaint = complaintService.findComplaintDetail(complaintId);
+        
         if (complaint == null) {
             res.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
