@@ -2,27 +2,43 @@ package com.campus.controller;
 
 import com.campus.dao.DepartmentDAO;
 import com.campus.dto.AnswerDTO;
+import com.campus.dto.AttachmentDTO;
 import com.campus.dto.ComplaintDTO;
 import com.campus.dto.DepartmentDTO;
 import com.campus.dto.FaqDTO;
 import com.campus.dto.StatusHistoryDTO;
+import com.campus.dto.UserDTO;
 import com.campus.service.AnswerService;
 import com.campus.service.ComplaintCheckService;
 import com.campus.service.ComplaintService;
 import com.campus.service.DepartmentService;
 import com.campus.util.CategoryConstants;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @WebServlet({"/complaints", "/complaints/detail", "/complaints/new", "/complaints/check", "/complaints/update",
-"/complaints/create", "/complaints/edit", "/complaints/delete", "/complaints/like", "/complaints/faq-test"})
+"/complaints/create", "/complaints/edit", "/complaints/delete", "/complaints/like", "/complaints/faq-test",
+"/complaints/download", "/complaints/attachment/delete"})
+@MultipartConfig(
+        maxFileSize = 10 * 1024 * 1024,
+        maxRequestSize = 50 * 1024 * 1024,
+        fileSizeThreshold = 1024 * 1024
+)
 public class ComplaintController extends HttpServlet {
     private final ComplaintService complaintService = new ComplaintService();
     private final ComplaintCheckService complaintCheckService = new ComplaintCheckService();
@@ -60,11 +76,17 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
+        if ("/complaints/download".equals(path)) {
+            complaintDownload(req, res);
+            return;
+        }
+
         if ("/complaints/check".equals(path)
                 || "/complaints/create".equals(path)
                 || "/complaints/update".equals(path)
                 || "/complaints/delete".equals(path)
-                || "/complaints/like".equals(path)) {
+                || "/complaints/like".equals(path)
+                || "/complaints/attachment/delete".equals(path)) {
             res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             return;
         }
@@ -78,7 +100,6 @@ public class ComplaintController extends HttpServlet {
         String uri = req.getRequestURI();
         String contextPath = req.getContextPath();
         String path =  uri.substring(contextPath.length());
-
 
         if ("/complaints/check".equals(path)) {
             complaintSimilarFAQ(req, res);
@@ -105,18 +126,23 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
+        if ("/complaints/attachment/delete".equals(path)) {
+            attachmentDelete(req, res);
+            return;
+        }
+
         if ("/complaints".equals(path)
                 || "/complaints/detail".equals(path)
                 || "/complaints/faq-test".equals(path)
                 || "/complaints/new".equals(path)
-                || "/complaints/edit".equals(path)) {
+                || "/complaints/edit".equals(path)
+                || "/complaints/download".equals(path)) {
             res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
             return;
         }
 
         res.sendError(HttpServletResponse.SC_NOT_FOUND);
     }
-
 
     // 민원 목록
     private void complaintList(HttpServletRequest req, HttpServletResponse res)
@@ -128,6 +154,21 @@ public class ComplaintController extends HttpServlet {
         String searchType = req.getParameter("searchType");
         String keyword = req.getParameter("keyword");
         String likeSort = req.getParameter("likeSort");
+        String myFilter = req.getParameter("my");
+
+        if (!"written".equals(myFilter) && !"liked".equals(myFilter)) {
+            myFilter = "";
+        }
+
+        UserDTO loginUser = getLoginUser(req);
+        Long myFilterUserId = null;
+        if (!myFilter.isBlank()) {
+            if (loginUser == null) {
+                res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+            myFilterUserId = loginUser.getUserId();
+        }
 
         if (!"asc".equals(likeSort) && !"desc".equals(likeSort)) {
             likeSort = "";
@@ -170,7 +211,9 @@ public class ComplaintController extends HttpServlet {
                 category,
                 status,
                 searchType,
-                keyword
+                keyword,
+                myFilter,
+                myFilterUserId
         );
 
         int totalPages = (int) Math.ceil((double) totalCount / pageSize);
@@ -191,6 +234,8 @@ public class ComplaintController extends HttpServlet {
                 searchType,
                 keyword,
                 likeSort,
+                myFilter,
+                myFilterUserId,
                 page,
                 pageSize
         );
@@ -201,7 +246,9 @@ public class ComplaintController extends HttpServlet {
                 category,
                 status,
                 searchType,
-                keyword
+                keyword,
+                myFilter,
+                myFilterUserId
         );
 
         List<DepartmentDTO> departments = departmentService.findAllDepartments();
@@ -219,6 +266,8 @@ public class ComplaintController extends HttpServlet {
         req.setAttribute("keyword", keyword);
         req.setAttribute("likeSort", likeSort);
         req.setAttribute("nextLikeSort", nextLikeSort);
+        req.setAttribute("myFilter", myFilter);
+        req.setAttribute("listTitle", getListTitle(myFilter));
 
         req.setAttribute("page", page);
         req.setAttribute("pageSize", pageSize);
@@ -236,10 +285,9 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
-        // id = 문자열 방지
         Long complaintId;
         try {
-            complaintId = Long.parseLong(_id);     // String -> Long
+            complaintId = Long.parseLong(_id);
         }
         catch (NumberFormatException e) {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -253,21 +301,26 @@ public class ComplaintController extends HttpServlet {
         }
 
         AnswerDTO answer = answerService.findAnswer(complaintId);
-        Long userId = 1L; // TODO: 로그인 기능 완성 후 session의 loginUser.getUserId()로 변경
-        boolean likedByMe = complaintService.isLikedByUser(complaintId, userId);
+        UserDTO loginUser = getLoginUser(req);
+        boolean likedByMe = loginUser != null
+                && complaintService.isLikedByUser(complaintId, loginUser.getUserId());
+        boolean canManageComplaint = canManageComplaint(loginUser, complaint);
         List<StatusHistoryDTO> statusHistories = complaintService.findStatusHistories(complaintId);
 
         req.setAttribute("complaint", complaint);
         req.setAttribute("answer", answer);
         req.setAttribute("likedByMe", likedByMe);
+        req.setAttribute("canManageComplaint", canManageComplaint);
         req.setAttribute("statusHistories", statusHistories);
+
+        List<AttachmentDTO> attachments = complaintService.findAttachments(complaintId);
+        req.setAttribute("attachments", attachments);
+
         req.getRequestDispatcher("/WEB-INF/views/complaint/detail.jsp").forward(req, res);
     }
 
-
     // 민원 작성 화면
     private void complaintNewForm(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-
         List<DepartmentDTO> departments = departmentService.findAllDepartments();
 
         req.setAttribute("departments", departments);
@@ -279,7 +332,6 @@ public class ComplaintController extends HttpServlet {
 
     // 민원 수정 화면
     private void complaintEditForm(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-
         Long complaintId = parseLongParam(req, res, "id");
         if (complaintId == null) {
             return;
@@ -292,19 +344,30 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
+
+        if (!canManageComplaint(loginUser, complaint)) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         List<DepartmentDTO> departments = departmentService.findAllDepartments();
 
         req.setAttribute("basket", complaint);
         req.setAttribute("departments", departments);
         req.setAttribute("categories", CategoryConstants.CATEGORIES);
 
+        List<AttachmentDTO> attachments = complaintService.findAttachments(complaintId);
+        req.setAttribute("attachments", attachments);
+
         req.getRequestDispatcher("/WEB-INF/views/complaint/form.jsp").forward(req, res);
     }
 
-
     // 민원 작성 2단계: 최종 등록
     private void complaintCreate(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-
         HttpSession session = req.getSession(false);
 
         if (session == null) {
@@ -319,13 +382,45 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
-        complaintService.createComplaint(pendingComplaint);
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
+
+        pendingComplaint.setWriterId(loginUser.getUserId());
+        
+        // 민원 생성 및 ID 반환
+        Long complaintId = complaintService.createComplaintAndReturnId(pendingComplaint);
+
+        // 첨부파일 처리
+        String tempDir = req.getServletContext().getRealPath("/uploads/temp");
+        String finalDir = req.getServletContext().getRealPath("/uploads/complaints");
+        
+        String tempSessionId = (String) session.getAttribute("tempAttachmentSessionId");
+        if (tempSessionId != null) {
+            List<AttachmentDTO> tempAttachments = (List<AttachmentDTO>) session.getAttribute("tempAttachments");
+            if (tempAttachments != null) {
+                File finalFolder = new File(finalDir + File.separator + complaintId);
+                if (!finalFolder.exists()) finalFolder.mkdirs();
+
+                for (AttachmentDTO att : tempAttachments) {
+                    File tempFile = new File(tempDir + File.separator + tempSessionId, att.getStoredName());
+                    if (tempFile.exists()) {
+                        File destFile = new File(finalFolder, att.getStoredName());
+                        tempFile.renameTo(destFile);
+                        att.setComplaintId(complaintId);
+                    }
+                }
+                complaintService.insertAttachments(tempAttachments);
+            }
+        }
 
         session.removeAttribute("pendingComplaint");
+        session.removeAttribute("tempAttachments");
+        session.removeAttribute("tempAttachmentSessionId");
 
         res.sendRedirect(req.getContextPath() + "/complaints");
     }
-
 
     // 민원 수정 처리
     private void complaintUpdate(HttpServletRequest req, HttpServletResponse res)
@@ -333,6 +428,12 @@ public class ComplaintController extends HttpServlet {
 
         Long complaintId = parseLongParam(req, res, "complaintId");
         if (complaintId == null) {
+            return;
+        }
+
+        ComplaintDTO oldComplaint = complaintService.findComplaintDetail(complaintId);
+        if (oldComplaint == null) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
@@ -360,9 +461,19 @@ public class ComplaintController extends HttpServlet {
         }
 
         boolean isPrivate = Boolean.parseBoolean(req.getParameter("isPrivate"));
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
+
+        if (!canManageComplaint(loginUser, oldComplaint)) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
 
         ComplaintDTO complaint = new ComplaintDTO();
         complaint.setComplaintId(complaintId);
+        complaint.setWriterId(loginUser.getUserId());
         complaint.setDepartmentId(departmentId);
         complaint.setCategory(category);
         complaint.setTitle(title);
@@ -370,10 +481,14 @@ public class ComplaintController extends HttpServlet {
         complaint.setPrivateFlag(isPrivate);
 
         complaintService.updateComplaint(complaint);
+        
+        // 첨부파일 추가 처리
+        List<Part> parts = (List<Part>) req.getParts();
+        String uploadDir = req.getServletContext().getRealPath("/uploads/complaints");
+        complaintService.saveAttachments(complaintId, parts, uploadDir);
 
         res.sendRedirect(req.getContextPath() + "/complaints/detail?id=" + complaintId);
     }
-
 
     // 민원 삭제 처리
     private void complaintDelete(HttpServletRequest req, HttpServletResponse res)
@@ -381,7 +496,6 @@ public class ComplaintController extends HttpServlet {
 
         Long complaintId = parseLongParam(req, res, "complaintId");
 
-        // 기존 코드나 JSP에서 id로 넘기는 경우까지 임시 호환
         if (complaintId == null) {
             complaintId = parseLongParam(req, res, "id");
         }
@@ -390,9 +504,27 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
-        Long writerId = 1L; // TODO: 로그인 기능 완성 후 session의 loginUser.getUserId()로 변경
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
 
-        complaintService.deleteComplaint(complaintId, writerId);
+        ComplaintDTO complaint = complaintService.findComplaintDetail(complaintId);
+        if (complaint == null) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        if (!canManageComplaint(loginUser, complaint)) {
+            res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
+        // 물리적 파일 삭제
+        String uploadDir = req.getServletContext().getRealPath("/uploads/complaints");
+        complaintService.deleteAttachmentFiles(complaintId, uploadDir);
+
+        complaintService.deleteComplaint(complaintId, loginUser.getUserId());
 
         res.sendRedirect(req.getContextPath() + "/complaints");
     }
@@ -406,7 +538,12 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
-        Long userId = 1L; // TODO: 로그인 기능 완성 후 session의 loginUser.getUserId()로 변경
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) {
+            return;
+        }
+
+        Long userId = loginUser.getUserId();
 
         int result;
         try {
@@ -464,32 +601,26 @@ public class ComplaintController extends HttpServlet {
         }
     }
 
-
-
     // 유사민원 / FAQ
     private void complaintSimilarFAQ(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        // 제목
         String title = req.getParameter("title");
         if (title == null || title.isBlank()) {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        // 내용
         String content = req.getParameter("content");
         if (content == null || content.isBlank()) {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        // 카테고리
         String category  = req.getParameter("category");
         if (category == null || category.isBlank()) {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
-        // 부서ID
         String departmentIdParam = req.getParameter("departmentId");
         if (departmentIdParam == null || departmentIdParam.isBlank()) {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -504,10 +635,8 @@ public class ComplaintController extends HttpServlet {
             return;
         }
 
-        // 비공개 여부
         boolean isPrivate = Boolean.parseBoolean(req.getParameter("isPrivate"));
 
-        // 작성 중인 민원 DTO 저장
         ComplaintDTO pendingComplaint = new ComplaintDTO();
         pendingComplaint.setTitle(title);
         pendingComplaint.setContent(content);
@@ -516,39 +645,155 @@ public class ComplaintController extends HttpServlet {
         pendingComplaint.setPrivateFlag(isPrivate);
 
         req.setAttribute("pendingComplaint", pendingComplaint);
-        req.getSession().setAttribute("pendingComplaint", pendingComplaint);
-        // 등록 성공 후 session.removeAttribute("pendingComplaint") 해야함
+        
+        HttpSession session = req.getSession();
+        session.setAttribute("pendingComplaint", pendingComplaint);
 
-        // 유사 민원
+        // 첨부파일 임시 저장 (check 단계)
+        String tempSessionId = UUID.randomUUID().toString();
+        String tempDir = req.getServletContext().getRealPath("/uploads/temp") + File.separator + tempSessionId;
+        File dir = new File(tempDir);
+        if (!dir.exists()) dir.mkdirs();
+
+        List<AttachmentDTO> tempAttachments = new ArrayList<>();
+        List<Part> parts = (List<Part>) req.getParts();
+        for (Part part : parts) {
+            if (part == null || part.getSize() == 0 || part.getSubmittedFileName() == null || part.getSubmittedFileName().isBlank()) {
+                continue;
+            }
+            String originalName = part.getSubmittedFileName();
+            String ext = "";
+            int dotIdx = originalName.lastIndexOf('.');
+            if (dotIdx > 0) ext = originalName.substring(dotIdx);
+            String storedName = UUID.randomUUID().toString() + ext;
+
+            File saveFile = new File(dir, storedName);
+            part.write(saveFile.getAbsolutePath());
+
+            AttachmentDTO attachment = new AttachmentDTO();
+            attachment.setOriginalName(originalName);
+            attachment.setStoredName(storedName);
+            attachment.setFileSize(part.getSize());
+            attachment.setContentType(part.getContentType());
+            
+            tempAttachments.add(attachment);
+        }
+        
+        session.setAttribute("tempAttachments", tempAttachments);
+        session.setAttribute("tempAttachmentSessionId", tempSessionId);
+
         List<ComplaintDTO> similarComplaints = complaintCheckService.findSimilarComplaints(pendingComplaint);
-
-        // FAQ
         List<FaqDTO> similarFaqs = complaintCheckService.findSimilarFaqs(pendingComplaint);
 
         req.setAttribute("similarComplaints", similarComplaints);
         req.setAttribute("similarFaqs", similarFaqs);
         req.setAttribute("showSimilarBox", true);
 
-
         List<DepartmentDTO> departments = departmentService.findAllDepartments();
-
         req.setAttribute("departments", departments);
         req.setAttribute("categories", CategoryConstants.CATEGORIES);
         req.setAttribute("basket", pendingComplaint);
 
         req.getRequestDispatcher("/WEB-INF/views/complaint/form.jsp").forward(req, res);
-        // req.getRequestDispatcher("/WEB-INF/views/test/faq-test.jsp").forward(req, res);
     }
 
+    // 첨부파일 다운로드
+    private void complaintDownload(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        Long attachmentId = parseLongParam(req, res, "id");
+        if (attachmentId == null) return;
 
+        AttachmentDTO attachment = complaintService.findAttachment(attachmentId);
+        if (attachment == null) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
 
+        String uploadDir = req.getServletContext().getRealPath("/uploads/complaints");
+        File file = new File(uploadDir + File.separator + attachment.getComplaintId(), attachment.getStoredName());
 
+        if (!file.exists()) {
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
 
+        String originalName = new String(attachment.getOriginalName().getBytes("UTF-8"), "ISO-8859-1");
+        res.setContentType("application/octet-stream");
+        res.setHeader("Content-Disposition", "attachment; filename=\"" + originalName + "\"");
+        res.setContentLength((int) file.length());
 
+        try (FileInputStream fis = new FileInputStream(file);
+             OutputStream os = res.getOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+        }
+    }
 
+    // 첨부파일 삭제 (수정 화면 등에서)
+    private void attachmentDelete(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        Long attachmentId = parseLongParam(req, res, "id");
+        if (attachmentId == null) return;
 
+        UserDTO loginUser = requireLoginUser(req, res);
+        if (loginUser == null) return;
 
+        AttachmentDTO attachment = complaintService.findAttachment(attachmentId);
+        if (attachment != null) {
+            ComplaintDTO complaint = complaintService.findComplaintDetail(attachment.getComplaintId());
+            if (canManageComplaint(loginUser, complaint)) {
+                String uploadDir = req.getServletContext().getRealPath("/uploads/complaints");
+                complaintService.deleteAttachment(attachmentId, uploadDir);
+                res.setContentType("application/json");
+                res.getWriter().write("{\"success\":true}");
+                return;
+            }
+        }
+        res.sendError(HttpServletResponse.SC_FORBIDDEN);
+    }
 
+    private UserDTO getLoginUser(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            return null;
+        }
+
+        Object loginUser = session.getAttribute("loginUser");
+        return loginUser instanceof UserDTO ? (UserDTO) loginUser : null;
+    }
+
+    private UserDTO requireLoginUser(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        UserDTO loginUser = getLoginUser(req);
+        if (loginUser == null) {
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            return null;
+        }
+
+        return loginUser;
+    }
+
+    private boolean canManageComplaint(UserDTO loginUser, ComplaintDTO complaint) {
+        if (loginUser == null || complaint == null) {
+            return false;
+        }
+
+        return loginUser.getUserId() != null
+                && loginUser.getUserId().equals(complaint.getWriterId())
+                && "RECEIVED".equals(complaint.getStatus());
+    }
+
+    private String getListTitle(String myFilter) {
+        if ("written".equals(myFilter)) {
+            return "내가 작성한 민원";
+        }
+
+        if ("liked".equals(myFilter)) {
+            return "내가 추천한 민원";
+        }
+
+        return "전체 민원";
+    }
 
     // faq 테스트용
     private void faqTest(HttpServletRequest req, HttpServletResponse res)
@@ -556,5 +801,4 @@ public class ComplaintController extends HttpServlet {
 
         req.getRequestDispatcher("/WEB-INF/views/test/faq-test.jsp").forward(req, res);
     }
-
 }
