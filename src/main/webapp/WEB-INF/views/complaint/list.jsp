@@ -68,6 +68,22 @@
             object-fit: contain;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-size: 14px;
+            color: #475467;
+        }
+
+        .header-nav a:hover { color: #007a5a; }
+
         .auth-nav {
             display: flex;
             align-items: center;
@@ -514,14 +530,28 @@
 
 <header class="site-header">
     <div class="header-inner">
-        <a class="brand" href="${pageContext.request.contextPath}/complaints">
-            <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
-        </a>
-
+        <div class="header-left">
+            <a class="brand" href="${pageContext.request.contextPath}/complaints">
+                <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
+            </a>
+            <nav class="header-nav">
+                <a href="${pageContext.request.contextPath}/complaints">민원 목록</a>
+                <c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+                    <a href="${pageContext.request.contextPath}/staff/complaints">부서별 민원 목록</a>
+                    <a href="${pageContext.request.contextPath}/admin/dashboard">관리자 대시보드</a>
+                </c:if>
+                <c:if test="${sessionScope.loginUser.role == 'STAFF'}">
+                    <a href="${pageContext.request.contextPath}/staff/dashboard">담당자 대시보드</a>
+                </c:if>
+            </nav>
+        </div>
         <div class="auth-nav">
-            <a href="#">로그인</a>
-            <a href="#">마이페이지</a>
-            <a href="#">로그아웃</a>
+            <% if (session.getAttribute("loginUser") == null) { %>
+                <a href="${pageContext.request.contextPath}/user/login">로그인</a>
+            <% } else { %>
+                <a href="${pageContext.request.contextPath}/user/mypage">마이페이지</a>
+                <a href="${pageContext.request.contextPath}/user/logout">로그아웃</a>
+            <% } %>
         </div>
     </div>
 </header>
@@ -531,7 +561,7 @@
         <div class="side-section">
             <button type="button" class="side-toggle">민원 메뉴</button>
             <div class="side-links">
-                <a class="${empty status ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints">민원 목록</a>
+                <a class="${empty status and empty myFilter ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints">민원 목록</a>
                 <a href="${pageContext.request.contextPath}/complaints/new">민원 작성</a>
             </div>
         </div>
@@ -539,8 +569,8 @@
         <div class="side-section">
             <button type="button" class="side-toggle">내 민원</button>
             <div class="side-links">
-                <a href="#">내가 작성한 민원</a>
-                <a href="#">내가 추천한 민원</a>
+                <a class="${myFilter == 'written' ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints?my=written">내가 작성한 민원</a>
+                <a class="${myFilter == 'liked' ? 'active' : ''}" href="${pageContext.request.contextPath}/complaints?my=liked">내가 추천한 민원</a>
             </div>
         </div>
 
@@ -564,6 +594,7 @@
 
     <form class="filter-panel" action="${pageContext.request.contextPath}/complaints" method="get">
         <input type="hidden" name="likeSort" value="${likeSort}">
+        <input type="hidden" name="my" value="${myFilter}">
 
         <select name="departmentType" aria-label="문의구분">
             <option value="">문의구분 전체</option>
@@ -697,7 +728,7 @@
     <section>
         <div class="section-heading list-toolbar">
             <div>
-                <h2>전체 민원</h2>
+                <h2>${listTitle}</h2>
                 <p id="complaintSummary">총 ${totalCount}건 · 현재 ${page}페이지 / 총 ${totalPages}페이지</p>
             </div>
 
@@ -710,6 +741,7 @@
                 <c:param name="searchType" value="${searchType}" />
                 <c:param name="keyword" value="${keyword}" />
                 <c:param name="likeSort" value="${nextLikeSort}" />
+                <c:param name="my" value="${myFilter}" />
             </c:url>
             <a class="sort-link" href="${likeSortUrl}" data-ajax-list="true">
                 <c:choose>
@@ -748,7 +780,7 @@
 
             <div class="pagination">
                 <c:if test="${page > 1}">
-                    <a href="${pageContext.request.contextPath}/complaints?page=${page - 1}&departmentType=${departmentType}&departmentId=${departmentId}&category=${category}&status=${status}&searchType=${searchType}&keyword=${keyword}&likeSort=${likeSort}" data-ajax-list="true">
+                    <a href="${pageContext.request.contextPath}/complaints?page=${page - 1}&departmentType=${departmentType}&departmentId=${departmentId}&category=${category}&status=${status}&searchType=${searchType}&keyword=${keyword}&likeSort=${likeSort}&my=${myFilter}" data-ajax-list="true">
                         이전
                     </a>
                 </c:if>
@@ -759,7 +791,7 @@
                             <strong>${p}</strong>
                         </c:when>
                         <c:otherwise>
-                            <a href="${pageContext.request.contextPath}/complaints?page=${p}&departmentType=${departmentType}&departmentId=${departmentId}&category=${category}&status=${status}&searchType=${searchType}&keyword=${keyword}&likeSort=${likeSort}" data-ajax-list="true">
+                            <a href="${pageContext.request.contextPath}/complaints?page=${p}&departmentType=${departmentType}&departmentId=${departmentId}&category=${category}&status=${status}&searchType=${searchType}&keyword=${keyword}&likeSort=${likeSort}&my=${myFilter}" data-ajax-list="true">
                                 ${p}
                             </a>
                         </c:otherwise>
@@ -767,7 +799,7 @@
                 </c:forEach>
 
                 <c:if test="${page < totalPages}">
-                    <a href="${pageContext.request.contextPath}/complaints?page=${page + 1}&departmentType=${departmentType}&departmentId=${departmentId}&category=${category}&status=${status}&searchType=${searchType}&keyword=${keyword}&likeSort=${likeSort}" data-ajax-list="true">
+                    <a href="${pageContext.request.contextPath}/complaints?page=${page + 1}&departmentType=${departmentType}&departmentId=${departmentId}&category=${category}&status=${status}&searchType=${searchType}&keyword=${keyword}&likeSort=${likeSort}&my=${myFilter}" data-ajax-list="true">
                         다음
                     </a>
                 </c:if>
