@@ -41,7 +41,18 @@
         .header-left {
             display: flex;
             align-items: center;
+            gap: 32px;
         }
+
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            font-size: 14px;
+            color: #475467;
+        }
+
+        .header-nav a:hover { color: #007a5a; }
 
         .brand img {
             display: block;
@@ -410,13 +421,25 @@
             <a class="brand" href="${pageContext.request.contextPath}/complaints">
                 <img src="${pageContext.request.contextPath}/assets/images/logo.svg" alt="학교 로고">
             </a>
-
+            <nav class="header-nav">
+                <a href="${pageContext.request.contextPath}/complaints">민원 목록</a>
+                <c:if test="${sessionScope.loginUser.role == 'ADMIN'}">
+                    <a href="${pageContext.request.contextPath}/staff/complaints">부서별 민원 목록</a>
+                    <a href="${pageContext.request.contextPath}/admin/dashboard">관리자 대시보드</a>
+                </c:if>
+                <c:if test="${sessionScope.loginUser.role == 'STAFF'}">
+                    <a href="${pageContext.request.contextPath}/staff/dashboard">담당자 대시보드</a>
+                </c:if>
+            </nav>
         </div>
 
         <div class="auth-nav">
-            <a href="#">로그인</a>
-            <a href="#">마이페이지</a>
-            <a href="#">로그아웃</a>
+            <% if (session.getAttribute("loginUser") == null) { %>
+                <a href="${pageContext.request.contextPath}/user/login">로그인</a>
+            <% } else { %>
+                <a href="${pageContext.request.contextPath}/user/mypage">마이페이지</a>
+                <a href="${pageContext.request.contextPath}/user/logout">로그아웃</a>
+            <% } %>
         </div>
     </div>
 </header>
@@ -460,7 +483,8 @@
     <form id="complaintForm"
           class="form-panel"
           action="${pageContext.request.contextPath}/complaints/${empty basket.complaintId ? 'check' : 'update'}"
-          method="post">
+          method="post"
+          enctype="multipart/form-data">
 
         <input type="hidden" name="complaintId" value="${basket.complaintId}">
 
@@ -514,6 +538,39 @@
             <div class="field full">
                 <label for="content">내용</label>
                 <textarea id="content" name="content" required placeholder="민원 내용을 자세히 입력하세요">${basket.content}</textarea>
+            </div>
+
+            <div class="field full">
+                <div class="field-label">첨부 파일 (최대 3개, 이미지만 가능)</div>
+                <div class="file-upload-wrapper" style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                    <label for="attachmentInput" class="button secondary" style="margin: 0; cursor: pointer;">
+                        파일 선택
+                    </label>
+                    <input type="file" id="attachmentInput" name="attachments" multiple accept="image/jpeg,image/png,image/gif" style="display: none;">
+                    <span id="fileNameDisplay" style="color: #667085; font-size: 14px;">선택된 파일 없음</span>
+                </div>
+                <div class="attachment-preview" id="attachmentPreview"></div>
+                
+                <c:if test="${not empty attachments}">
+                    <div class="existing-attachments" style="margin-top: 16px;">
+                        <div style="font-size: 14px; font-weight: 600; color: #475467; margin-bottom: 8px;">기존 첨부 파일</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+                            <c:forEach var="att" items="${attachments}">
+                                <li id="existing-att-${att.attachmentId}" style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #667085;">
+                                    <svg style="width: 16px; height: 16px; color: #667085;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                    </svg>
+                                    ${att.originalName}
+                                    <button type="button" class="delete-att-btn" data-id="${att.attachmentId}" aria-label="삭제" style="background: none; border: none; padding: 4px; cursor: pointer; color: #98a2b3; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; transition: color 0.2s, background-color 0.2s;" onmouseover="this.style.color='#c92a20'; this.style.backgroundColor='#fee2e2'" onmouseout="this.style.color='#98a2b3'; this.style.backgroundColor='transparent'">
+                                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </li>
+                            </c:forEach>
+                        </ul>
+                    </div>
+                </c:if>
             </div>
 
             <div class="field full">
@@ -694,6 +751,66 @@
         }
 
         changeDeptList(initialType);
+
+        // 첨부파일 삭제 버튼
+        const deleteBtns = document.querySelectorAll('.delete-att-btn');
+        deleteBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (!confirm("정말 삭제하시겠습니까?")) return;
+                const id = this.getAttribute('data-id');
+                fetch('${pageContext.request.contextPath}/complaints/attachment/delete?id=' + id, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('existing-att-' + id).remove();
+                        } else {
+                            alert("삭제에 실패했습니다.");
+                        }
+                    }).catch(e => alert("삭제 중 오류가 발생했습니다."));
+            });
+        });
+
+        // 파일 개수 및 확장자 제한
+        const attachmentInput = document.getElementById('attachmentInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        if (attachmentInput) {
+            attachmentInput.addEventListener('change', function() {
+                const files = this.files;
+                if (files.length === 0) {
+                    if (fileNameDisplay) fileNameDisplay.textContent = "선택된 파일 없음";
+                    return;
+                }
+                
+                if (files.length > 3) {
+                    alert("최대 3개까지 첨부 가능합니다.");
+                    this.value = '';
+                    if (fileNameDisplay) fileNameDisplay.textContent = "선택된 파일 없음";
+                    return;
+                }
+                
+                let fileNames = [];
+                for (let i = 0; i < files.length; i++) {
+                    const ext = files[i].name.split('.').pop().toLowerCase();
+                    if (!['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+                        alert("이미지 파일(jpg, png, gif)만 첨부 가능합니다.");
+                        this.value = '';
+                        if (fileNameDisplay) fileNameDisplay.textContent = "선택된 파일 없음";
+                        return;
+                    }
+                    if (files[i].size > 10 * 1024 * 1024) {
+                        alert("파일 크기는 10MB 이하만 가능합니다.");
+                        this.value = '';
+                        if (fileNameDisplay) fileNameDisplay.textContent = "선택된 파일 없음";
+                        return;
+                    }
+                    fileNames.push(files[i].name);
+                }
+                
+                if (fileNameDisplay) {
+                    fileNameDisplay.textContent = fileNames.join(", ");
+                }
+            });
+        }
     };
 </script>
 
