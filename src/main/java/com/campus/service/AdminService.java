@@ -45,7 +45,7 @@ public class AdminService {
     public List<UserDTO> findUsers(String role, Long departmentId, String searchType, String keyword, int page, int pageSize) {
         if (page < 1) page = 1;
 
-        if ("STUDENT".equals(role)) {
+        if ("STUDENT".equals(role) || "ADMIN".equals(role)) {
             departmentId = null;
         }
 
@@ -67,12 +67,10 @@ public class AdminService {
 
         if (role == null || role.isBlank()) return FAIL;
 
-        // 관리자 화면에서는 STUDENT <-> STAFF 변경만 허용
-        // ADMIN으로 변경하는 요청은 거부
-        if (!role.equals("STUDENT") && !role.equals("STAFF")) return FAIL;
+        if (!role.equals("STUDENT") && !role.equals("STAFF") && !role.equals("ADMIN")) return FAIL;
 
-        // STUDENT는 담당부서 없음
-        if (role.equals("STUDENT")) departmentId = null;
+        // STUDENT/ADMIN은 담당부서 없음
+        if (role.equals("STUDENT") || role.equals("ADMIN")) departmentId = null;
 
         // STAFF는 담당부서 필수
         if (role.equals("STAFF") && departmentId == null) return FAIL;
